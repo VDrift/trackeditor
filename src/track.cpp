@@ -39,17 +39,158 @@ void ROADSTRIP::ClearPatches()
 	}
 }
 
-void ROADSTRIP::Add(BEZIER newpatch)
+BEZIER * ROADSTRIP::Add(BEZIER newpatch)
 {
-	BEZIERNODE * oldfirst = patchnodes;
-	patchnodes = new BEZIERNODE;
-	patchnodes->patch.CopyFrom(newpatch);
-	patchnodes->next = oldfirst;
+	BEZIERNODE * lastnode = NULL;
+	BEZIERNODE * curnode = patchnodes;
+	
+	while (curnode != NULL)
+	{
+		lastnode = curnode;
+		curnode = curnode->next;
+	}
+
+	//only continue if there is a last node and it really is the last node
+	if (lastnode != NULL && lastnode->next == NULL)
+	{
+		lastnode->next = new BEZIERNODE;
+		lastnode->next->patch.CopyFrom(newpatch);
+		
+		//optional....
+		lastnode->patch.Attach(lastnode->next->patch);
+		return &(lastnode->next->patch);
+	}
+	
+	if (patchnodes == NULL)
+	{
+		patchnodes = new BEZIERNODE;
+		patchnodes->patch.CopyFrom(newpatch);
+		return &(patchnodes->patch);
+	}
+	
+	return NULL;
 }
+
+BEZIER * ROADSTRIP::AddNew()
+{
+	BEZIER newpatch;
+	return Add(newpatch);
+}
+
+bool ROADSTRIP::ReadFrom(ifstream &openfile)
+{
+	//optional....
+	ClearPatches();
+	
+	if (!openfile)
+		return false;
+	
+	BEZIER * newpatch;
+	
+	int num;
+	
+	//the number of patches for this road
+	openfile >> num;
+	
+	int i;
+	
+	for (i = 0; i < num; i++)
+	{
+		//create a new patch and make it read from the file
+		newpatch = AddNew();
+		if (!newpatch->ReadFrom(openfile))
+			return false;
+	}
+	
+	return true;
+}
+
+bool ROADSTRIP::WriteTo(ofstream &openfile)
+{
+	BEZIERNODE * curnode = patchnodes;
+	
+	openfile << NumPatches() << endl << endl;
+		
+	while (curnode != NULL)
+	{
+		curnode->patch.WriteTo(openfile);
+		openfile << endl;
+		
+		curnode = curnode->next;
+	}
+	
+	return true;
+}
+
+int ROADSTRIP::NumPatches()
+{
+	BEZIERNODE * curnode = patchnodes;
+	
+	int num = 0;
+	
+	while (curnode != NULL)
+	{
+		num++;
+		
+		curnode = curnode->next;
+	}
+	
+	return num;
+}
+
+void ROADSTRIP::DeleteLastPatch()
+{
+	BEZIERNODE * lastnode = NULL;
+	BEZIERNODE * prevlastnode = NULL;
+	BEZIERNODE * curnode = patchnodes;
+	
+	while (curnode != NULL)
+	{
+		prevlastnode = lastnode;
+		lastnode = curnode;
+		curnode = curnode->next;
+	}
+
+	//only continue if there is a last node and it really is the last node
+	if (lastnode != NULL && lastnode->next == NULL)
+	{
+		if (prevlastnode != NULL)
+		{
+			delete prevlastnode->next;
+			prevlastnode->next = NULL;
+		}
+		else
+		{
+			delete patchnodes;
+			patchnodes = NULL;
+		}
+	}
+}
+
+void ROADSTRIP::Visualize (bool wireframe, bool fill)
+{
+	BEZIERNODE * curnode = patchnodes;
+	
+	while (curnode != NULL)
+	{
+		curnode->patch.Visualize(wireframe, fill);
+		
+		curnode = curnode->next;
+	}
+}
+
+
+//----------------- TRACK --------------
+
 
 TRACK::TRACK()
 {
 	roads = NULL;
+}
+
+TRACK::~TRACK()
+{
+	ClearRoads();
 }
 
 void TRACK::ClearRoads()
@@ -69,4 +210,15 @@ ROADSTRIP * TRACK::AddNewRoad()
 	roads->next = oldfirst;
 	
 	return &(roads->road);
+}
+
+void TRACK::VisualizeRoads(bool wireframe, bool fill)
+{
+	ROADSTRIPNODE * curnode = roads;
+	
+	while (curnode != NULL)
+	{
+		curnode->road.Visualize(wireframe, fill);
+		curnode = curnode->next;
+	}
 }

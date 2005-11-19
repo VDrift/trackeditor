@@ -31,6 +31,7 @@ class BEZIERNODE
 public:
 	BEZIER patch;
 	BEZIERNODE * next;
+	BEZIERNODE() {next = NULL;}
 };
 
 class ROADSTRIP
@@ -38,11 +39,17 @@ class ROADSTRIP
 private:
 	BEZIERNODE * patchnodes;
 	void ClearPatches();
+	int NumPatches();
 	
 public:
 	ROADSTRIP();
 	~ROADSTRIP() {ClearPatches();}
-	void Add(BEZIER newpatch);
+	BEZIER * Add(BEZIER newpatch);
+	BEZIER * AddNew();
+	bool ReadFrom(ifstream &openfile);
+	bool WriteTo(ofstream &openfile);
+	void DeleteLastPatch();
+	void Visualize (bool wireframe, bool fill);
 };
 
 class ROADSTRIPNODE
@@ -50,18 +57,20 @@ class ROADSTRIPNODE
 public:
 	ROADSTRIP road;
 	ROADSTRIPNODE * next;
+	ROADSTRIPNODE() {next = NULL;}
 };
 
 class TRACK
 {
 private:
 	ROADSTRIPNODE * roads;
-	void ClearRoads();
 	
 public:
 	TRACK();
 	~TRACK();
 	ROADSTRIP * AddNewRoad();
+	void VisualizeRoads(bool wireframe, bool fill);
+	void ClearRoads();
 };
 
 #define _TRACK_H

@@ -166,7 +166,8 @@ public:
     bool Load(string strFileName);
 	void Draw(int frame, float t);
 	void Draw(int frame, int nextframe, float t);
-	void DrawStatic(); //draw frame 0, optimized for speed
+	void DrawStatic(bool textures); //draw frame 0, optimized for speed
+	void DrawStatic() {DrawStatic(true);}
 
 	void NewDraw(int frame, float t, VERTEX lightdir, QUATERNION rotation, int pass);
 	void NewDraw(int frame, int nextframe, float t, VERTEX lightdir, QUATERNION rotation, int pass);

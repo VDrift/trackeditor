@@ -10,3 +10,7 @@ starting_line.joe
 0 0 -3
 0.23
 
+# track test
+roadtest.joe
+0 0 0
+0

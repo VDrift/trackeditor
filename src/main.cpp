@@ -36,6 +36,7 @@ using namespace std;
 //#include "net.h"
 #include "configfile.h"
 #include "bezier.h"
+#include "track.h"
 
 #ifdef _WIN32
 //#define GL_GLEXT_PROTOTYPES
@@ -593,7 +594,9 @@ bool LoadWorld()
 	setupfile.GetParam("active track", activetrack);
 	if (activetrack == "")
 		activetrack = "default";
-	cout << activetrack << endl;
+	
+	objects.LoadObjectsFromFolder(settings.GetDataDir() + "/tracks/" + 
+			activetrack + "/objects/");
 	
 	//car_file = "s2000";
 	//ifstream csfile;
@@ -878,6 +881,12 @@ int drawGLScene( GLvoid )
 	lp[1] = LightPosition[1];
 	lp[2] = LightPosition[2];
 	lp[3] = 0;
+	
+	//lighting hardcoded to reasonable position
+	lp[0] = 3;
+	lp[1] = 3;
+	lp[2] = 3;
+	lp[3] = 0;
 	glLightfv( GL_LIGHT1, GL_POSITION, lp );
 	
 	#ifdef PERFORMANCE_PROFILE
@@ -963,6 +972,9 @@ int drawGLScene( GLvoid )
 		
 		//glClear (GL_DEPTH_BUFFER_BIT);
 		
+		//glDisable(GL_LIGHTING);
+		objects.Draw();
+		
 		#ifdef PERFORMANCE_PROFILE
 		t2 = GetMicroSeconds();
 		cout << "normal draw done" << t2-t1 << endl;
@@ -1036,7 +1048,7 @@ int drawGLScene( GLvoid )
 			
 			nextpatch.SetFromCorners(fl, fr, bl, br);
 			
-			patch.Attach(nextpatch);
+			//patch.Attach(nextpatch);
 			
 			BEZIER thirdpatch;
 			offset.zero();
@@ -1049,11 +1061,26 @@ int drawGLScene( GLvoid )
 			
 			thirdpatch.SetFromCorners(fl, fr, bl, br);
 			
-			nextpatch.Attach(thirdpatch);
+			//nextpatch.Attach(thirdpatch);
 			
-			patch.Visualize(true, true);
+			/*patch.Visualize(true, true);
 			nextpatch.Visualize(true, true);
-			thirdpatch.Visualize(true, true);
+			thirdpatch.Visualize(true, true);*/
+			
+			TRACK testtrack;
+			ROADSTRIP * teststrip = testtrack.AddNewRoad();
+			teststrip->Add(patch);
+			teststrip->Add(nextpatch);
+			teststrip->Add(thirdpatch);
+			
+			//teststrip.DeleteLastPatch();
+			
+			/*teststrip.Add(patch);
+			teststrip.Add(nextpatch);
+			teststrip.Add(thirdpatch);
+			teststrip.Visualize(true, true);*/
+			
+			testtrack.VisualizeRoads(true, true);
 			
 			VERTEX down;
 			down.y = -1;

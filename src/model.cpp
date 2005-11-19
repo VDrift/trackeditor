@@ -446,8 +446,8 @@ void JOEMODEL::NewDraw(int currentFrame, float t, VERTEX lightdir, QUATERNION ro
 
 void JOEMODEL::Draw(int currentFrame, int nextframe, float t)
 {
-	utility.SelectTU(0);
-	glEnable(GL_TEXTURE_2D);
+	/*utility.SelectTU(0);*/
+	/*glEnable(GL_TEXTURE_2D);*/
 	
 	int num_frames = pObject->info.num_frames;
 	int num_faces = pObject->info.num_faces;
@@ -947,7 +947,7 @@ inline void JOEMODEL::TexCoordFromNormal(VERTEX &norm, VERTEX &ldir)
 	JGL_3MTEXCOORD(GL_TEXTURE0_ARB, lpos.x, lpos.y, lpos.z);*/
 }
 
-void JOEMODEL::DrawStatic() //draw frame 0, optimized for speed
+void JOEMODEL::DrawStatic(bool textures) //draw frame 0, optimized for speed
 {
 	int i;
 	
@@ -957,63 +957,66 @@ void JOEMODEL::DrawStatic() //draw frame 0, optimized for speed
 		glDisable(GL_TEXTURE_2D);
 	}
 	
-	for (i = 0; i < MAX_TEXTURE_UNITS && i < utility.numTUs(); i++)
+	if (textures)
 	{
-		if (texturemode[i] != TEXTUREMODE_NOTEX)
+		for (i = 0; i < MAX_TEXTURE_UNITS && i < utility.numTUs(); i++)
 		{
-			utility.SelectTU(i);
-			glBindTexture(GL_TEXTURE_2D, textureid[i]);
-			if (tuenable[i])
-				glEnable(GL_TEXTURE_2D);
-			else
-				glDisable(GL_TEXTURE_2D);
-		
-			if (texturemode[i] == TEXTUREMODE_ADD)
+			if (texturemode[i] != TEXTUREMODE_NOTEX)
 			{
-				glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE_ARB);
-				glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE1_RGB_ARB, GL_PREVIOUS_ARB);
-				glTexEnvi(GL_TEXTURE_ENV,GL_OPERAND1_RGB_ARB,GL_SRC_COLOR);
-				glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE0_RGB_ARB, GL_TEXTURE);
-				glTexEnvi(GL_TEXTURE_ENV,GL_OPERAND0_RGB_ARB,GL_SRC_COLOR);
-				if (i > 0)
-					glTexEnvi(GL_TEXTURE_ENV,GL_COMBINE_RGB_ARB, GL_ADD);
+				utility.SelectTU(i);
+				glBindTexture(GL_TEXTURE_2D, textureid[i]);
+				if (tuenable[i])
+					glEnable(GL_TEXTURE_2D);
 				else
-					glTexEnvi(GL_TEXTURE_ENV,GL_COMBINE_RGB_ARB, GL_REPLACE);
+					glDisable(GL_TEXTURE_2D);
+			
+				if (texturemode[i] == TEXTUREMODE_ADD)
+				{
+					glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE_ARB);
+					glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE1_RGB_ARB, GL_PREVIOUS_ARB);
+					glTexEnvi(GL_TEXTURE_ENV,GL_OPERAND1_RGB_ARB,GL_SRC_COLOR);
+					glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE0_RGB_ARB, GL_TEXTURE);
+					glTexEnvi(GL_TEXTURE_ENV,GL_OPERAND0_RGB_ARB,GL_SRC_COLOR);
+					if (i > 0)
+						glTexEnvi(GL_TEXTURE_ENV,GL_COMBINE_RGB_ARB, GL_ADD);
+					else
+						glTexEnvi(GL_TEXTURE_ENV,GL_COMBINE_RGB_ARB, GL_REPLACE);
+					
+					glTexEnvi(GL_TEXTURE_ENV, GL_RGB_SCALE_ARB, 1);
+				}
 				
-				glTexEnvi(GL_TEXTURE_ENV, GL_RGB_SCALE_ARB, 1);
+				if (texturemode[i] == TEXTUREMODE_REFLECTION)
+				{
+					glTexGenf(GL_S, GL_TEXTURE_GEN_MODE, GL_SPHERE_MAP); 
+					glTexGenf(GL_T, GL_TEXTURE_GEN_MODE, GL_SPHERE_MAP); 
+					glEnable(GL_TEXTURE_GEN_S);
+					glEnable(GL_TEXTURE_GEN_T);
+					glEnable(GL_TEXTURE_2D);
+					float sub[4];
+					//sub[0] = sub[1] = sub[2] = 0.8f;
+					sub[0] = sub[1] = sub[2] = 0.7f;
+					//sub[0] = sub[1] = sub[2] = 0.0f;
+					sub[3] = 0.0f;
+					glTexEnvfv(GL_TEXTURE_ENV, GL_TEXTURE_ENV_COLOR, sub);
+					glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE_ARB);
+					glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE1_RGB_ARB, GL_PREVIOUS_ARB);
+					glTexEnvi(GL_TEXTURE_ENV,GL_OPERAND1_RGB_ARB,GL_SRC_COLOR);
+					glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE0_RGB_ARB, GL_TEXTURE);
+					glTexEnvi(GL_TEXTURE_ENV,GL_OPERAND0_RGB_ARB,GL_SRC_COLOR);
+					//glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE2_RGB_ARB, GL_CONSTANT_ARB);
+					//glTexEnvi(GL_TEXTURE_ENV,GL_OPERAND2_RGB_ARB,GL_SRC_COLOR);
+					//glTexEnvi(GL_TEXTURE_ENV,GL_COMBINE_RGB_ARB, GL_INTERPOLATE);
+					glTexEnvi(GL_TEXTURE_ENV, GL_RGB_SCALE_ARB, 1);
+					
+					if (i > 0)
+						glTexEnvi(GL_TEXTURE_ENV,GL_COMBINE_RGB_ARB, GL_ADD);
+					else
+						glTexEnvi(GL_TEXTURE_ENV,GL_COMBINE_RGB_ARB, GL_REPLACE);
+				}
 			}
 			
-			if (texturemode[i] == TEXTUREMODE_REFLECTION)
-			{
-				glTexGenf(GL_S, GL_TEXTURE_GEN_MODE, GL_SPHERE_MAP); 
-				glTexGenf(GL_T, GL_TEXTURE_GEN_MODE, GL_SPHERE_MAP); 
-				glEnable(GL_TEXTURE_GEN_S);
-				glEnable(GL_TEXTURE_GEN_T);
-				glEnable(GL_TEXTURE_2D);
-				float sub[4];
-				//sub[0] = sub[1] = sub[2] = 0.8f;
-				sub[0] = sub[1] = sub[2] = 0.7f;
-				//sub[0] = sub[1] = sub[2] = 0.0f;
-				sub[3] = 0.0f;
-				glTexEnvfv(GL_TEXTURE_ENV, GL_TEXTURE_ENV_COLOR, sub);
-				glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE_ARB);
-				glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE1_RGB_ARB, GL_PREVIOUS_ARB);
-				glTexEnvi(GL_TEXTURE_ENV,GL_OPERAND1_RGB_ARB,GL_SRC_COLOR);
-				glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE0_RGB_ARB, GL_TEXTURE);
-				glTexEnvi(GL_TEXTURE_ENV,GL_OPERAND0_RGB_ARB,GL_SRC_COLOR);
-				//glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE2_RGB_ARB, GL_CONSTANT_ARB);
-				//glTexEnvi(GL_TEXTURE_ENV,GL_OPERAND2_RGB_ARB,GL_SRC_COLOR);
-				//glTexEnvi(GL_TEXTURE_ENV,GL_COMBINE_RGB_ARB, GL_INTERPOLATE);
-				glTexEnvi(GL_TEXTURE_ENV, GL_RGB_SCALE_ARB, 1);
-				
-				if (i > 0)
-					glTexEnvi(GL_TEXTURE_ENV,GL_COMBINE_RGB_ARB, GL_ADD);
-				else
-					glTexEnvi(GL_TEXTURE_ENV,GL_COMBINE_RGB_ARB, GL_REPLACE);
-			}
+			//cout << modelpath << ": " << i << ": " << texturemode[i] << endl;
 		}
-		
-		//cout << modelpath << ": " << i << ": " << texturemode[i] << endl;
 	}
 	
 	//glBindTexture(GL_TEXTURE_2D, texid[texnum]);

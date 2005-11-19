@@ -68,9 +68,11 @@ void OBJECTS::DrawObject(OBJECTNODE * object)
 	//frustum cull!
 	float bound, rd;
 	//if (rc > lod_far)
+	if ((object->pos + cam.position).len() >= object->model->jmodel.GetRadius())
 	{
+		//cout << "outside object" << endl;
 		//bound = spread*2.0f;
-		bound = object->model->jmodel.GetRadius()*2.0f;
+		bound = object->model->jmodel.GetRadius();//*2.0f;
 		int i;
 		for (i=0;i<6;i++) 
 		{
@@ -84,6 +86,7 @@ void OBJECTS::DrawObject(OBJECTNODE * object)
 			}
 		}
 	}
+	//else cout << "inside object" << endl;
 	
 	glPushMatrix();
 			
@@ -109,7 +112,30 @@ void OBJECTS::DrawObject(OBJECTNODE * object)
 		//glDepthMask(0);
 		glColor4f(1,1,1,1);
 		
+		//draw filled & proper polygon
+		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 		object->model->jmodel.DrawStatic();
+		
+		//draw verts
+		glDisable(GL_ALPHA_TEST);
+		//glDisable(GL_DEPTH_TEST);
+		glDisable(GL_TEXTURE_2D);
+		glPointSize(4.0);
+		glDisable(GL_LIGHTING);
+		glColor4f(0,0,1,1);
+		glPolygonMode(GL_FRONT_AND_BACK, GL_POINT);
+		object->model->jmodel.DrawStatic(false);
+				
+		glDisable(GL_TEXTURE_2D);
+		glDisable(GL_DEPTH_TEST);
+		glPointSize(1.0);
+		glColor4f(0,0,1,1);
+		glPolygonMode(GL_FRONT_AND_BACK, GL_POINT);
+		object->model->jmodel.DrawStatic(false);
+		
+		glEnable(GL_LIGHTING);
+		glEnable(GL_DEPTH_TEST);
+		glColor4f(1,1,1,1);
 		
 		glPopAttrib();
 	}
