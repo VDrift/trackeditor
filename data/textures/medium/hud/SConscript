@@ -1,0 +1,34 @@
+#-------------#
+# Import Vars #
+#-------------#
+Import('*')
+
+#---------#
+# Sources #
+#---------#
+src = Split("""accdec-marker.png
+               accdec-slider.png
+               ball.png
+               ball2.png
+               fuelgaugebox.png
+               needle.png
+               redband.png
+               slider.png
+               slider2.png
+               speedo.png
+               tachband.png
+               tachometer.png
+               timerbox.png""")
+
+#---------------------------------#
+# Distribute to src_dir & bin_dir #
+#---------------------------------#
+dist_files = ['SConscript'] + src
+
+env.Distribute (src_dir, dist_files)
+env.Distribute (bin_dir, src)
+
+#--------------------#
+# Install data files #
+#--------------------#
+env.Install('%s/textures/medium/hud' % prefix, src)

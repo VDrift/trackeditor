@@ -1,0 +1,20 @@
+#-------------#
+# Import Vars #
+#-------------#
+Import('*')
+
+#-----------------------#
+# Distribute to src_dir #
+#-----------------------#
+env.Distribute (src_dir, 'SConscript')
+
+Export(['env', 'prefix', 'src_dir', 'bin_dir'])
+
+SConscript('gui/SConscript')
+SConscript('hud/SConscript')
+SConscript('icons/SConscript')
+SConscript('smoke/SConscript')
+SConscript('track/SConscript')
+SConscript('trees/SConscript')
+SConscript('weather/SConscript')
+

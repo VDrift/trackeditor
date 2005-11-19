@@ -1,0 +1,26 @@
+#-------------#
+# Import Vars #
+#-------------#
+Import('*')
+
+src = Split("""bezier.h
+               camera.h
+               configfile.h
+               font.h
+               globals.h
+               keyman.h
+               messageq.h
+               model.h
+               mouse.h
+               objects.h
+               quat.h
+               settings.h
+               track.h
+               utility.h""")
+
+#-----------------------#
+# Distribute to src_dir #
+#-----------------------#
+dist_files = ['SConscript'] + src
+
+env.Distribute (src_dir, dist_files)

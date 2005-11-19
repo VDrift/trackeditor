@@ -1,0 +1,44 @@
+#-------------#
+# Import Vars #
+#-------------#
+Import('*')
+
+#---------#
+# Sources #
+#---------#
+src = Split("""100.png
+               150.png
+               200.png
+               300.png
+               400.png
+               50.png
+               blue-green-tires.png
+               blue-kerb.png
+               blue-tires.png
+               grass.png
+               kerb.png
+               rail.png
+               red-kerb.png
+               red-tires.png
+               sand.png
+               sky_bottom.png
+               sky_sides.png
+               sky_top.png
+               tires.png
+               track2.png
+               track.png
+               starting_line.png
+               wall.png""")
+
+#---------------------------------#
+# Distribute to src_dir & bin_dir #
+#---------------------------------#
+dist_files = ['SConscript'] + src
+
+env.Distribute (src_dir, dist_files)
+env.Distribute (bin_dir, src)
+
+#--------------------#
+# Install data files #
+#--------------------#
+env.Install('%s/textures/medium/track' % prefix, src)

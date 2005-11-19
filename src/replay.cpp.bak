@@ -1,0 +1,114 @@
+/***************************************************************************
+ *            replay.cc
+ *
+ *  Fri Jun 10 18:58:04 2005
+ *  Copyright  2005  Joe Venzon
+ *  joe@venzon.net
+ ****************************************************************************/
+
+/*
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Library General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ */
+ 
+#include "replay.h"
+
+REPLAY::REPLAY()
+{
+	num_frames = 0;
+	replay = false;
+	frame = NULL;
+}
+
+REPLAY::~REPLAY()
+{
+	if (frame != NULL)
+		delete [] frame;
+}
+
+void REPLAY::Clear()
+{
+	int i;
+	if (frame != NULL)
+	{
+		for (i = 0; i < MAX_FRAMES; i++)
+		{
+			frame[i].num_records = 0;
+		}
+	}
+	
+	num_frames = 0;
+}
+
+void REPLAY::AddRecord(string newdofunction, float newval)
+{
+	if (replay && frame[num_frames].num_records++ < RECS_PER_FRAME && frame != NULL)
+	{
+		frame[num_frames].record[frame[num_frames].num_records].dofunction = newdofunction;
+		frame[num_frames].record[frame[num_frames].num_records].val = newval;
+		
+		frame[num_frames].num_records++;
+		
+		if (frame[num_frames].num_records++ >= RECS_PER_FRAME)
+		{
+			cout << "Exceeded maximum number of inputs per replay frame." << endl;
+		}
+		
+		if (newval != 0.0)
+		cout << newdofunction << "," << newval << endl;
+	}
+}
+
+void REPLAY::IncrementFrame()
+{
+	//cout << frame[num_frames].num_records << endl;
+	
+	if (replay)
+		num_frames++;
+	
+	if (num_frames == MAX_FRAMES)
+	{
+		//write out a block of data to the file
+		//fwrite(
+		Clear();
+	}
+	
+	num_frames = num_frames % MAX_FRAMES;
+	
+	//cout << num_frames << endl;
+}
+
+void REPLAY::Start()
+{
+	if (frame != NULL)
+		delete [] frame;
+	frame = new REPLAY_FRAME[MAX_FRAMES];
+	if (frame == NULL)
+		cout << "Couldn't allocate replay memory" << endl;
+	Clear();
+	replay = true;
+	num_frames = 0;
+	
+	rf = fopen("replays/temp.vdr", "wb");
+}
+
+void REPLAY::Stop()
+{
+	replay = false;
+	
+	delete [] frame;
+	frame = NULL;
+	
+	fclose(rf);
+}

@@ -1,0 +1,27 @@
+#-------------#
+# Import Vars #
+#-------------#
+Import('*')
+
+#---------#
+# Sources #
+#---------#
+src = Split("""box.png
+               logo_opengl.png
+               newfontt3.png
+               refmap.png
+               splash.png
+               vdrift-logo.png""")
+
+#---------------------------------#
+# Distribute to src_dir & bin_dir #
+#---------------------------------#
+dist_files = ['SConscript'] + src
+
+env.Distribute (src_dir, dist_files)
+env.Distribute (bin_dir, src)
+
+#--------------------#
+# Install data files #
+#--------------------#
+env.Install('%s/textures/medium/gui' % prefix, src)

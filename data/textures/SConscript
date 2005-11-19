@@ -1,0 +1,18 @@
+#-------------#
+# Import Vars #
+#-------------#
+Import('*')
+
+#-----------------------#
+# Distribute to src_dir #
+#-----------------------#
+env.Distribute (src_dir, 'SConscript')
+
+#----------------#
+# Subdirectories #
+#----------------#
+Export(['env', 'prefix', 'src_dir', 'bin_dir'])
+
+SConscript('small/SConscript')
+SConscript('medium/SConscript')
+SConscript('large/SConscript')

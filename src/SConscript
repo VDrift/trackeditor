@@ -1,0 +1,68 @@
+#-------------#
+# Import Vars #
+#-------------#
+Import('*')
+
+#----------------#
+# Subdirectories #
+#----------------#
+#vamosobjs = SConscript('vamos/SConscript', exports=['env','src_dir'])
+
+#---------#
+# Sources #
+#---------#
+src = Split("""main.cpp
+               camera.cpp
+               font.cpp
+               keyman.cpp
+               messageq.cpp
+               model.cpp
+               mouse.cpp
+               objects.cpp
+               quat.cpp
+               settings.cpp
+               track.cpp
+               utility.cpp
+               configfile.cpp
+               bezier.cpp""")
+
+#------------------------#
+# Copy Build Environment #
+#------------------------#
+local_env = env.Copy()
+SConsignFile()
+
+#--------------------------#
+# Modify Build Environment #
+#--------------------------#
+#if sound == 'openal':
+#    local_env.Append(CCFLAGS = '-DHAVE_OPENAL=1')
+#else:
+#    local_env.Append(CCFLAGS = '-DHAVE_FMOD=1')
+
+local_env.ParseConfig('sdl-config --cflags')
+local_env.ParseConfig('sdl-config --libs')
+local_env.Append(CCFLAGS = ['-DVERSION=\\"%s\\"' % version])
+#local_env.Append(LIBS = ['GL', 'GLU', 'SDL_image', 'SDL_net', 'vamos'])
+local_env.Append(LIBS = ['GL', 'GLU', 'SDL_image', 'SDL_net'])
+#local_env.Append(LIBPATH = ['vamos', '/usr/X11R6/lib'])
+local_env.Append(LIBPATH = ['/usr/X11R6/lib'])
+
+#-----------------------#
+# Distribute to src_dir #
+#-----------------------#
+dist_files = ['SConscript'] + src
+
+env.Distribute (src_dir, dist_files)
+
+#--------------------#
+# Compile Executable #
+#--------------------#
+vdrift = local_env.Program('vdrift', [src])
+
+Default(vdrift)
+
+#---------#
+# Install #
+#---------#
+#local_env.Install(bin, vdrift)

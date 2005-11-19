@@ -1,0 +1,76 @@
+/***************************************************************************
+ *            replay.h
+ *
+ *  Fri Jun 10 18:57:03 2005
+ *  Copyright  2005  Joe Venzon
+ *  joe@venzon.net
+ ****************************************************************************/
+
+/*
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Library General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ */
+ 
+#ifndef _REPLAY_H
+#define _REPLAY_H
+
+#include <stdio.h>			// Header File For Standard Input/Output
+#include <GL/gl.h>
+#include <GL/glu.h>
+#include <SDL/SDL.h>
+#include <SDL/SDL_image.h>
+#include <string>
+#include <iostream>
+#include <fstream>
+#include <cmath>
+#include <cassert>
+
+using namespace std;
+
+#define MAX_FRAMES 500
+
+#define RECS_PER_FRAME 20
+
+struct REPLAY_RECORD
+{
+	string dofunction;
+	float val;
+};
+
+struct REPLAY_FRAME
+{
+	REPLAY_RECORD record[RECS_PER_FRAME];
+	int num_records;
+};
+
+class REPLAY
+{
+private:
+	int num_frames;
+	REPLAY_FRAME * packet;
+	bool replay;
+	FILE * rf;
+
+public:
+	REPLAY();
+	~REPLAY();
+	void Clear();
+	void Start();
+	void AddRecord(string newdofunction, float newval);
+	void IncrementFrame();
+	void Stop();
+	bool Recording() {return replay;}
+};
+
+#endif /* _REPLAY_H */
