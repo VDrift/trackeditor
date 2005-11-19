@@ -80,6 +80,12 @@ int SCREEN_WIDTH = 1024;
 int SCREEN_HEIGHT = 768;
 int SCREEN_BPP = 32;
 
+struct EDITORDATA
+{
+	GLuint cursortex;
+	VERTEX selvert;
+} editordata;
+
 bool verbose_output = false;
 
 //bool in_menu = false;
@@ -223,6 +229,8 @@ void ResetWorld(bool fullreset);
 /* function to release/destroy our resources and restoring the old desktop */
 void Quit( int returnCode )
 {
+	glDeleteTextures(1, &editordata.cursortex);
+	
 	if (verbose_output)
 		cout << "Quit called" << endl;
 	
@@ -640,7 +648,7 @@ bool LoadWorld()
 	
 	LoadingScreen("Loading...\nDone");
 	
-	mq1.AddMessage("Simulation start");
+	mq1.AddMessage("Editor started, press H for help");
 	
 	return true;
 }
@@ -695,7 +703,7 @@ bool InitGameData()
 	LoadingScreen("Loading...\nStarting message queue");
 	mq1.SetPersist(5.0f);
 	mq1.SetDepth(1);
-	mq1.SetPos(0.01,0.09,5,1);
+	mq1.SetPos(0.01,0.01,5,1);
 	mq1.SetBuildUp(true);
 	//mq1.SetTimePrint(true);
 	
@@ -713,6 +721,8 @@ bool InitGameData()
 	//water.initWater(32,32,16,100.0f);
 	//water.initWater(64,64,8,10.0f);
 */
+
+	editordata.cursortex = utility.TexLoad("gui/cursor.png", false);
 
 	LoadWorld();
 	
@@ -1180,6 +1190,11 @@ int drawGLScene( GLvoid )
 	
 		//timer.Draw();
 	}
+	
+	float w, h;
+	w = 0.02;
+	h = w*(4/3.0);
+	utility.Draw2D(0.5-w, 0.5-h, 0.5+w, 0.5+h, editordata.cursortex);
 	
 	if (fps > 0.0f)
 		mq1.Draw(timefactor, fps, font);

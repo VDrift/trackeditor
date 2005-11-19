@@ -23,7 +23,7 @@ void MOUSE::Update(CAMERA & cam, int screenw, int screenh, float timefactor, flo
     angleZ = ( (middleY - mousePos_y) );
 	
 
-	if(SDL_GetMouseState(NULL, NULL)&SDL_BUTTON(2))
+	/*if(SDL_GetMouseState(NULL, NULL)&SDL_BUTTON(2))
 	{
 		if (!mousebounce)
 		{
@@ -32,7 +32,7 @@ void MOUSE::Update(CAMERA & cam, int screenw, int screenh, float timefactor, flo
 		}
 	}
 	else
-		mousebounce = false;
+		mousebounce = false;*/
 	
 	/*if (mousesteering)
 		UpdateSteering(angleY, angleZ);

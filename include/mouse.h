@@ -43,6 +43,7 @@ public:
 	float GetSensitivityX() {return mouse_sensitivity_x;}
 	float GetSensitivityY() {return mouse_sensitivity_y;}
 	bool GetMouseEnabled() {return mousesteering;}
+	bool ButtonDown(int butnum) {return (SDL_GetMouseState(NULL, NULL)&SDL_BUTTON(butnum));}
 };
 
 #define _MOUSE_H
