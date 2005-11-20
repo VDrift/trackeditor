@@ -7,8 +7,8 @@
 
 # starting line
 starting_line.joe
-0 0 -3
-0.23
+0 0 0
+0
 
 # track test
 roadtest.joe

@@ -86,6 +86,7 @@ bool ROADSTRIP::ReadFrom(ifstream &openfile)
 		return false;
 	
 	BEZIER * newpatch;
+	BEZIER temppatch;
 	
 	int num;
 	
@@ -97,9 +98,9 @@ bool ROADSTRIP::ReadFrom(ifstream &openfile)
 	for (i = 0; i < num; i++)
 	{
 		//create a new patch and make it read from the file
-		newpatch = AddNew();
-		if (!newpatch->ReadFrom(openfile))
+		if (!temppatch.ReadFrom(openfile))
 			return false;
+		newpatch = Add(temppatch);
 	}
 	
 	return true;
@@ -220,5 +221,62 @@ void TRACK::VisualizeRoads(bool wireframe, bool fill)
 	{
 		curnode->road.Visualize(wireframe, fill);
 		curnode = curnode->next;
+	}
+}
+
+void TRACK::Write(string trackname)
+{
+	ofstream trackfile;
+	trackfile.open((settings.GetDataDir() + "/tracks/" + trackname + "/roads.trk").c_str());
+	
+	trackfile << NumRoads() << endl << endl;
+	
+	ROADSTRIPNODE * curnode = roads;
+	
+	while (curnode != NULL && trackfile)
+	{
+		curnode->road.WriteTo(trackfile);
+		curnode = curnode->next;
+	}
+}
+
+int TRACK::NumRoads()
+{
+	ROADSTRIPNODE * curnode = roads;
+	
+	int num = 0;
+	
+	while (curnode != NULL)
+	{
+		num++;
+		curnode = curnode->next;
+	}
+	
+	return num;
+}
+
+void TRACK::Load(string trackname)
+{
+	ifstream trackfile;
+	trackfile.open((settings.GetDataDir() + "/tracks/" + trackname + "/roads.trk").c_str());
+	
+	int numroads, i; 
+	
+	if (trackfile)
+	{
+		trackfile >> numroads;
+	}
+	else
+	{
+		cout << "No track named " << trackname << ", creating a new one." << endl;
+		return;
+	}
+	
+	ROADSTRIP * newroad;
+	
+	for (i = 0; i < numroads && trackfile; i++)
+	{
+		newroad = AddNewRoad();
+		newroad->ReadFrom(trackfile);
 	}
 }

@@ -34,7 +34,7 @@ using namespace std;
 class BEZIER
 {
 private:
-	void DrawSurf(int div);
+	void DrawSurf(int div, float trans);
 	void DrawControlPoints();
 	VERTEX Bernstein(float u, VERTEX *p);
 	VERTEX SurfCoord(float px, float py);

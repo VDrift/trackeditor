@@ -18,6 +18,9 @@
 #include "model.h"
 #include "globals.h"
 
+#define SELECT_DISTANCE 1.0
+//#define MAX_SELECTION_DIST 100.0
+
 class OBJECTMODEL
 {
 public:
@@ -59,6 +62,8 @@ public:
 	void Draw();
 	void Add(VERTEX pos, float rotation, string modelname);
 	void DeleteAll();
+
+	bool FindClosestVert(VERTEX orig, VERTEX dir, VERTEX &out);
 
 	void LoadObjectsFromFolder(string objectpath);
 };

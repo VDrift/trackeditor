@@ -83,8 +83,12 @@ int SCREEN_BPP = 32;
 struct EDITORDATA
 {
 	GLuint cursortex;
-	VERTEX selvert;
+	VERTEX bezinput[4];
+	int numbezinput;
+	bool mousebounce[5];
 } editordata;
+
+string activetrack;
 
 bool verbose_output = false;
 
@@ -138,6 +142,9 @@ MESSAGEQ mq1;
 OBJECTS objects;
 //NET net;
 //MULTIPLAY multiplay;
+
+TRACK testtrack;
+ROADSTRIP * teststrip;
 
 //VAMOSWORLD world;
 //Vamos_Track::Strip_Track *road;
@@ -519,6 +526,19 @@ void handleKeyPress( SDL_keysym *keysym )
 			//cam.Update();
 			//cam.LoadVelocityIdentity();
 			break;*/
+			
+		case SDLK_BACKSPACE:
+			if (teststrip != NULL)
+			{
+				teststrip->DeleteLastPatch();
+				editordata.numbezinput = 0;
+			}
+			break;
+			
+		case 's':
+			mq1.AddMessage("Saved to file");
+			testtrack.Write(activetrack);
+			break;
 		
 		//case SDLK_F11:
 			//SDL_WM_ToggleFullScreen( surface );
@@ -592,19 +612,25 @@ bool LoadWorld()
 {
 	UnloadWorld();
 	
+	editordata.numbezinput = 0;
+	editordata.mousebounce[1] = false;
+	
+	teststrip = testtrack.AddNewRoad();
+	
 	//begin loading world
 	
 	LoadingScreen("Loading...\nConfiguration files");
 	
 	CONFIGFILE setupfile;
 	setupfile.Load(settings.GetDataDir() + "/tracks/editor.config");
-	string activetrack;
 	setupfile.GetParam("active track", activetrack);
 	if (activetrack == "")
 		activetrack = "default";
 	
 	objects.LoadObjectsFromFolder(settings.GetDataDir() + "/tracks/" + 
 			activetrack + "/objects/");
+	
+	testtrack.Load(activetrack);
 	
 	//car_file = "s2000";
 	//ifstream csfile;
@@ -878,7 +904,7 @@ int drawGLScene( GLvoid )
 
 	
 	GLdouble temp_matrix[16];
-
+	int i;
 	
 	
 
@@ -1025,7 +1051,7 @@ int drawGLScene( GLvoid )
 		
 		//glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		
-		if (1)
+		/*if (0)
 		{	
 			//experimental bezier stuff
 			BEZIER patch;
@@ -1073,10 +1099,6 @@ int drawGLScene( GLvoid )
 			
 			//nextpatch.Attach(thirdpatch);
 			
-			/*patch.Visualize(true, true);
-			nextpatch.Visualize(true, true);
-			thirdpatch.Visualize(true, true);*/
-			
 			TRACK testtrack;
 			ROADSTRIP * teststrip = testtrack.AddNewRoad();
 			teststrip->Add(patch);
@@ -1084,12 +1106,7 @@ int drawGLScene( GLvoid )
 			teststrip->Add(thirdpatch);
 			
 			//teststrip.DeleteLastPatch();
-			
-			/*teststrip.Add(patch);
-			teststrip.Add(nextpatch);
-			teststrip.Add(thirdpatch);
-			teststrip.Visualize(true, true);*/
-			
+					
 			testtrack.VisualizeRoads(true, true);
 			
 			VERTEX down;
@@ -1099,7 +1116,82 @@ int drawGLScene( GLvoid )
 			{
 				//colpoint.DebugPrint();
 			}
+		}*/
+		
+		VERTEX camray;
+		camray.z = -1;
+		camray = cam.dir.ReturnConjugate().RotateVec(camray);
+		/*camray.z = 1;
+		camray = cam.dir.RotateVec(camray);*/
+		VERTEX selvert;
+		bool highlightedvert = false;
+		if (objects.FindClosestVert(cam.position.ScaleR(-1.0), camray, selvert))
+		{
+			/*cam.position.ScaleR(-1.0).DebugPrint();
+			selvert.DebugPrint();
+			cout << endl;*/
+			
+			//draw a highlighted vert
+			
+			highlightedvert = true;
+			
+			glPushAttrib(GL_ALL_ATTRIB_BITS);
+			glDisable(GL_LIGHTING);
+			glDisable(GL_TEXTURE_2D);
+			glDisable(GL_DEPTH_TEST);
+			//glEnable(GL_BLEND);
+			//glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+			glPointSize(4.0);
+			//glColor4f(1,1,0,0.75);
+			glColor4f(1,1,0,1);
+			glBegin(GL_POINTS);
+			glVertex3fv(selvert.v3());
+			glEnd();
+			glDisable(GL_BLEND);
+			glColor4f(1,1,1,1);
+			glPopAttrib();
 		}
+		
+		if (highlightedvert && mouse.ButtonDown(1) && !editordata.mousebounce[1])
+		{
+			//left click on a highlighted vert
+			editordata.numbezinput++;
+			
+			if (editordata.numbezinput >= 4)
+			{
+				//create bezier patch
+				BEZIER patch;
+				patch.SetFromCorners(editordata.bezinput[2], selvert, editordata.bezinput[0], editordata.bezinput[1]);
+				teststrip->Add(patch);
+				
+				//editordata.numbezinput = 0;
+				editordata.numbezinput = 2;
+				
+				editordata.bezinput[0] = editordata.bezinput[2];
+				editordata.bezinput[1] = selvert;
+			}
+			else
+			{
+				editordata.bezinput[editordata.numbezinput-1] = selvert;
+			}
+		}
+		
+		editordata.mousebounce[1] = mouse.ButtonDown(1);
+		
+		glPushAttrib(GL_ALL_ATTRIB_BITS);
+		glDisable(GL_LIGHTING);
+		glDisable(GL_TEXTURE_2D);
+		glDisable(GL_DEPTH_TEST);
+		glPointSize(4.0);
+		glColor4f(1,0,0,1);
+		glBegin(GL_POINTS);
+		for (i = 0; i < editordata.numbezinput; i++)
+			glVertex3fv(editordata.bezinput[i].v3());
+		glEnd();
+		glColor4f(1,1,1,1);
+		glPopAttrib();
+		
+		testtrack.VisualizeRoads(true, true);
 		
 		//image in the framebuffer is now complete.
 		
@@ -1219,8 +1311,6 @@ int drawGLScene( GLvoid )
 		lfpspos = lfpspos % AVERAGEFRAMES;
 		lfpsfull = true;
 	}
-	
-	int i;
 	
 	float tfps = 0.0f;
 	int tnum = 0;

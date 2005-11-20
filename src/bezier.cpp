@@ -87,7 +87,14 @@ void BEZIER::Visualize(bool wireframe, bool fill)
 	{
 		glColor4f(1,1,1,1);
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-		DrawSurf(SURFDRAW_VIS);
+		//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+		glDisable(GL_DEPTH_TEST);
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+		float trans = 0.25;
+		glColor4f(1,1,1,trans);
+		DrawSurf(SURFDRAW_VIS, trans);
+		glEnable(GL_DEPTH_TEST);
 	}
 	
 	if (wireframe)
@@ -111,7 +118,7 @@ void BEZIER::Visualize(bool wireframe, bool fill)
 	glPopAttrib();
 }
 
-void BEZIER::DrawSurf(int div)
+void BEZIER::DrawSurf(int div, float trans)
 {
 	int x, y;
 	
@@ -140,7 +147,7 @@ void BEZIER::DrawSurf(int div)
 				normal = normal.normalize();
 				col = normal.y;
 				col = col * col;
-				glColor4f(col,col,col, 1);
+				glColor4f(col,col,col, trans);
 				
 				glVertex3fv(SurfCoord(pxo, py).v3());
 				glVertex3fv(SurfCoord(px, py).v3());
@@ -150,7 +157,7 @@ void BEZIER::DrawSurf(int div)
 				normal = normal.normalize();
 				col = normal.y;
 				col = col * col;
-				glColor4f(col,col,col, 1);
+				glColor4f(col,col,col, trans);
 				
 				glVertex3fv(SurfCoord(px, pyo).v3());
 				glVertex3fv(SurfCoord(pxo, pyo).v3());

@@ -64,6 +64,7 @@ class TRACK
 {
 private:
 	ROADSTRIPNODE * roads;
+	int NumRoads();
 	
 public:
 	TRACK();
@@ -71,6 +72,8 @@ public:
 	ROADSTRIP * AddNewRoad();
 	void VisualizeRoads(bool wireframe, bool fill);
 	void ClearRoads();
+	void Write(string trackname);
+	void Load(string trackname);
 };
 
 #define _TRACK_H
