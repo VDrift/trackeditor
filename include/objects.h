@@ -21,6 +21,10 @@
 #define SELECT_DISTANCE 1.0
 #define MAX_SELECTION_DIST 100.0
 
+#define SELECT_AUTO_DISTANCE 10.0
+#define CLOSENESS_AUTO_BIAS 0.0
+#define MAX_AUTO_SELECTION_DIST 50.0
+
 class OBJECTMODEL
 {
 public:
@@ -64,6 +68,7 @@ public:
 	void DeleteAll();
 
 	bool FindClosestVert(VERTEX orig, VERTEX dir, VERTEX &out);
+	bool AutoFindClosestVert(VERTEX orig, VERTEX dir, VERTEX &out);
 
 	void LoadObjectsFromFolder(string objectpath);
 };

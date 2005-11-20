@@ -294,7 +294,7 @@ bool OBJECTS::FindClosestVert(VERTEX orig, VERTEX dir, VERTEX &out)
 				dotprod = tvert.dot(dir);
 				rayproj = dir.ScaleR(dotprod);
 				
-				if ((tvert - rayproj).len() < mindist)
+				if ((tvert - rayproj).len() < mindist && dotprod > 0)
 				{
 					mindist = (tvert - rayproj).len();
 					selvert = tvert + orig;
@@ -321,4 +321,54 @@ bool OBJECTS::FindClosestVert(VERTEX orig, VERTEX dir, VERTEX &out)
 	{
 		return false;
 	}
+}
+
+bool OBJECTS::AutoFindClosestVert(VERTEX orig, VERTEX dir, VERTEX &out)
+{
+	bool found = false;
+	float mindist = SELECT_AUTO_DISTANCE * 1000.0;
+	VERTEX relobjpos, tvert, rayproj;
+	int i;
+	float dotprod = 0;
+	
+	//dir = dir.normalize().ScaleR(MAX_SELECTION_DIST);
+	dir = dir.normalize();
+	
+	OBJECTNODE * curpos = object_list;
+	while (curpos != NULL)
+	{
+		relobjpos = curpos->pos - orig;
+		
+		for (i = 0; i < curpos->model->jmodel.GetVerts(0); i++)
+		{
+			tvert.Set(curpos->model->jmodel.GetVertArray(0)[i].vertex);
+			//float tf = tvert.x;
+			tvert.z = -tvert.z;
+			tvert = relobjpos + tvert;
+			
+			if (tvert.len() < MAX_AUTO_SELECTION_DIST)
+			{
+				dotprod = tvert.dot(dir);
+				rayproj = dir.ScaleR(dotprod);
+				
+				if ((tvert - rayproj).len() + (CLOSENESS_AUTO_BIAS*relobjpos.len()) < mindist && dotprod > 0)
+				{
+					mindist = (tvert - rayproj).len();
+					out = tvert + orig;
+					
+					found = true;
+				}
+			}
+		}
+		
+		/*cout << "Num verts: " << curpos->model->jmodel.GetVerts(0) << endl;
+		//relobjpos.DebugPrint();
+		dir.DebugPrint();
+		tvert.DebugPrint();
+		cout << tvert.dot(dir) << endl;*/
+		
+		curpos = curpos -> next;
+	}
+	
+	return found;
 }

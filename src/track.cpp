@@ -168,6 +168,35 @@ void ROADSTRIP::DeleteLastPatch()
 	}
 }
 
+BEZIER * ROADSTRIP::GetLastPatch()
+{
+	BEZIERNODE * lastnode = NULL;
+	BEZIERNODE * prevlastnode = NULL;
+	BEZIERNODE * curnode = patchnodes;
+	
+	while (curnode != NULL)
+	{
+		prevlastnode = lastnode;
+		lastnode = curnode;
+		curnode = curnode->next;
+	}
+
+	//only continue if there is a last node and it really is the last node
+	if (lastnode != NULL && lastnode->next == NULL)
+	{
+		if (prevlastnode != NULL)
+		{
+			return &(prevlastnode->next->patch);
+		}
+		else
+		{
+			return &(patchnodes->patch);
+		}
+	}
+	
+	return NULL;
+}
+
 void ROADSTRIP::Visualize (bool wireframe, bool fill)
 {
 	BEZIERNODE * curnode = patchnodes;

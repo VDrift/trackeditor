@@ -50,6 +50,7 @@ public:
 	bool WriteTo(ofstream &openfile);
 	void DeleteLastPatch();
 	void Visualize (bool wireframe, bool fill);
+	BEZIER * GetLastPatch();
 };
 
 class ROADSTRIPNODE

@@ -86,9 +86,8 @@ struct EDITORDATA
 	VERTEX bezinput[4];
 	int numbezinput;
 	bool mousebounce[5];
+	string activetrack;
 } editordata;
-
-string activetrack;
 
 bool verbose_output = false;
 
@@ -482,8 +481,11 @@ void MainUnpause()
 /* function to handle key press events */
 void handleKeyPress( SDL_keysym *keysym )
 {
-	VERTEX tvec2;
+	VERTEX tvec1, tvec2, fr, fl, bl, br;
 	QUATERNION trot;
+	BEZIER * lastbez;
+	BEZIER patch;
+	bool l, r;
 	
 	//else if (timefactor == 0 && !menu.InMenu()) timefactor = 0;
 		//		else timefactor = 1.0;
@@ -531,13 +533,47 @@ void handleKeyPress( SDL_keysym *keysym )
 			if (teststrip != NULL)
 			{
 				teststrip->DeleteLastPatch();
-				editordata.numbezinput = 0;
+				
+				lastbez = teststrip->GetLastPatch();
+				if (lastbez != NULL)
+				{
+					editordata.bezinput[0] = lastbez->points[0][0];
+					editordata.bezinput[1] = lastbez->points[0][3];
+				}
+				else
+					editordata.numbezinput = 0;
 			}
 			break;
 			
 		case 's':
 			mq1.AddMessage("Saved to file");
-			testtrack.Write(activetrack);
+			testtrack.Write(editordata.activetrack);
+			break;
+		
+		case 'a':
+			lastbez = teststrip->GetLastPatch();
+			if (lastbez != NULL && editordata.numbezinput == 2)
+			{
+				fl = lastbez->points[0][0];
+				fr = lastbez->points[0][3];
+				bl = lastbez->points[3][0];
+				br = lastbez->points[3][3];
+				
+				l = objects.AutoFindClosestVert(fl, (fl-bl), tvec1);
+				r = objects.AutoFindClosestVert(fr, (fr-br), tvec2);
+				
+				if (l && r)
+				{
+					patch.SetFromCorners(tvec1, tvec2, editordata.bezinput[0], editordata.bezinput[1]);
+					teststrip->Add(patch);
+					
+					//editordata.numbezinput = 0;
+					editordata.numbezinput = 2;
+					
+					editordata.bezinput[0] = tvec1;
+					editordata.bezinput[1] = tvec2;
+				}
+			}
 			break;
 		
 		//case SDLK_F11:
@@ -623,14 +659,14 @@ bool LoadWorld()
 	
 	CONFIGFILE setupfile;
 	setupfile.Load(settings.GetDataDir() + "/tracks/editor.config");
-	setupfile.GetParam("active track", activetrack);
-	if (activetrack == "")
-		activetrack = "default";
+	setupfile.GetParam("active track", editordata.activetrack);
+	if (editordata.activetrack == "")
+		editordata.activetrack = "default";
 	
 	objects.LoadObjectsFromFolder(settings.GetDataDir() + "/tracks/" + 
-			activetrack + "/objects/");
+			editordata.activetrack + "/objects/");
 	
-	testtrack.Load(activetrack);
+	testtrack.Load(editordata.activetrack);
 	
 	//car_file = "s2000";
 	//ifstream csfile;
