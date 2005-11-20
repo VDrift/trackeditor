@@ -87,6 +87,7 @@ struct EDITORDATA
 	int numbezinput;
 	bool mousebounce[5];
 	string activetrack;
+	int helppage;
 } editordata;
 
 bool verbose_output = false;
@@ -532,7 +533,10 @@ void handleKeyPress( SDL_keysym *keysym )
 		case SDLK_BACKSPACE:
 			if (teststrip != NULL)
 			{
-				teststrip->DeleteLastPatch();
+				if (teststrip->DeleteLastPatch())
+					mq1.AddMessage("Deleted patch");
+				else
+					mq1.AddMessage("Can't delete patch: no patches on this road");
 				
 				lastbez = teststrip->GetLastPatch();
 				if (lastbez != NULL)
@@ -543,6 +547,14 @@ void handleKeyPress( SDL_keysym *keysym )
 				else
 					editordata.numbezinput = 0;
 			}
+			else
+			{
+				mq1.AddMessage("Can't delete patch: no roads");
+			}
+			break;
+			
+		case 'h':
+			editordata.helppage++;
 			break;
 			
 		case 's':
@@ -572,7 +584,16 @@ void handleKeyPress( SDL_keysym *keysym )
 					
 					editordata.bezinput[0] = tvec1;
 					editordata.bezinput[1] = tvec2;
+					mq1.AddMessage("Auto-traced road");
 				}
+				else
+				{
+					mq1.AddMessage("Can't auto-trace road: found no candidate points");
+				}
+			}
+			else
+			{
+				mq1.AddMessage("Can't auto-trace road: must start road first");
 			}
 			break;
 		
@@ -648,6 +669,7 @@ bool LoadWorld()
 {
 	UnloadWorld();
 	
+	editordata.helppage = 0;
 	editordata.numbezinput = 0;
 	editordata.mousebounce[1] = false;
 	
@@ -764,7 +786,7 @@ bool InitGameData()
 	
 	LoadingScreen("Loading...\nStarting message queue");
 	mq1.SetPersist(5.0f);
-	mq1.SetDepth(1);
+	mq1.SetDepth(3);
 	mq1.SetPos(0.01,0.01,5,1);
 	mq1.SetBuildUp(true);
 	//mq1.SetTimePrint(true);
@@ -1386,6 +1408,46 @@ int drawGLScene( GLvoid )
 	cout << "font.Print() ticks: " << t2-t1 << endl;
 	t1 = GetMicroSeconds();
 	#endif
+	
+	
+	//draw help screen(s)
+	if (editordata.helppage > 2)
+		editordata.helppage = 0;
+	if (editordata.helppage == 1)
+	{
+		font.Print(0.1, 0.1, "VDrift Track Editor Keys (press H again for more help)\n"
+	"Mouse left click\n"
+	"Arrow keys\n"
+	"Page Up\n"
+	"A\n"
+	"S\n"
+	"BACKSPACE\n"
+	"ESCAPE\n"
+	, 1, 5, 1.0);
+		font.Print(0.3, 0.1, "\n"
+	"Select highligted vertex\n"
+	"Move around\n"
+	"Move forward very fast\n"
+	"Automatically try to create the next bezier patch on this road\n"
+	"Save the track\n"
+	"Delete the last bezier patch on this road\n"
+	"Quit the editor\n"
+	, 1, 5, 1.0);
+	}
+	if (editordata.helppage == 2)
+		font.Print(0.1, 0.1, "VDrift Track Editor Textual Help\n"
+	"The editor starts in vertex selection mode.  Vertices are highlighted yellow as the mouse pointer\n"
+	"gets close to them.  Press the left mouse button to select the highlighted vertex.  It will turn\n"
+	"red.  Select a vertex on the left side of the road, then a vertex on the right side of the road,\n"
+	"with left and right determined by the direction you'd like to create the road in.  You can now select\n"
+	"the next two vertices (left and then right), and a green box will be created to indicate a bezier\n"
+	"patch has been created there.  Notice that the last two vertices you select are still colored red\n"
+	"(selected).  You can now select the next two vertices (left and right), and continue to create bezier\n"
+	"patches around the track.  Once you have created a bezier patch, you can alternatively press A to\n"
+	"have the editor try to automatically select the next two vertices and auto-create the next patch.\n"
+	"This works well in straight areas, not so well in curvy areas.  Press BACKSPACE at any time to delete\n"
+	"the last patch that was created."
+	, 1, 5, 1.0);
 
 
 	/* Draw it to the screen */

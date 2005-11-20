@@ -48,7 +48,7 @@ public:
 	BEZIER * AddNew();
 	bool ReadFrom(ifstream &openfile);
 	bool WriteTo(ofstream &openfile);
-	void DeleteLastPatch();
+	bool DeleteLastPatch();
 	void Visualize (bool wireframe, bool fill);
 	BEZIER * GetLastPatch();
 };

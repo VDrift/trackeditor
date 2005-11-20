@@ -139,7 +139,7 @@ int ROADSTRIP::NumPatches()
 	return num;
 }
 
-void ROADSTRIP::DeleteLastPatch()
+bool ROADSTRIP::DeleteLastPatch()
 {
 	BEZIERNODE * lastnode = NULL;
 	BEZIERNODE * prevlastnode = NULL;
@@ -159,13 +159,17 @@ void ROADSTRIP::DeleteLastPatch()
 		{
 			delete prevlastnode->next;
 			prevlastnode->next = NULL;
+			return true;
 		}
 		else
 		{
 			delete patchnodes;
 			patchnodes = NULL;
+			return true;
 		}
 	}
+	
+	return false;
 }
 
 BEZIER * ROADSTRIP::GetLastPatch()

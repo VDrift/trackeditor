@@ -217,6 +217,13 @@ void MESSAGEQ::Draw(float timefactor, float fps, FONT & font)
 	{
 		finalstr = strout;
 		
+		float white;
+		float redtime = 8.0;
+		if (sortlen[i] > ((redtime-1.0)*qpersist)/redtime)
+			white = 1.0-(sortlen[i]-((redtime-1.0)*qpersist/redtime))/(qpersist/redtime);
+		else
+			white = 1.0;
+		
 		float trans;
 		if (sortlen[i] < qpersist/4.0)
 			trans = sortlen[i]/(qpersist/4.0);
@@ -224,7 +231,7 @@ void MESSAGEQ::Draw(float timefactor, float fps, FONT & font)
 			trans = 1.0;
 		
 		finalstr.append(sortq[i]);
-		font.Print(posx,posy,finalstr.c_str(),fset,size,trans);
+		font.Print(posx,posy,finalstr.c_str(),fset,size,1,white,white,trans);
 		strout.append("\n");
 	}
 }
