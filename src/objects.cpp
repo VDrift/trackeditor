@@ -288,13 +288,17 @@ bool OBJECTS::FindClosestVert(VERTEX orig, VERTEX dir, VERTEX &out)
 			//float tf = tvert.x;
 			tvert.z = -tvert.z;
 			tvert = relobjpos + tvert;
-			dotprod = tvert.dot(dir);
-			rayproj = dir.ScaleR(dotprod);
 			
-			if ((tvert - rayproj).len() < mindist)
+			if (tvert.len() < MAX_SELECTION_DIST)
 			{
-				mindist = (tvert - rayproj).len();
-				selvert = tvert + orig;
+				dotprod = tvert.dot(dir);
+				rayproj = dir.ScaleR(dotprod);
+				
+				if ((tvert - rayproj).len() < mindist)
+				{
+					mindist = (tvert - rayproj).len();
+					selvert = tvert + orig;
+				}
 			}
 		}
 		

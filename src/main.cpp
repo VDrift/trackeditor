@@ -1191,7 +1191,7 @@ int drawGLScene( GLvoid )
 		glColor4f(1,1,1,1);
 		glPopAttrib();
 		
-		testtrack.VisualizeRoads(true, true);
+		testtrack.VisualizeRoads(true, false);
 		
 		//image in the framebuffer is now complete.
 		

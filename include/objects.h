@@ -19,7 +19,7 @@
 #include "globals.h"
 
 #define SELECT_DISTANCE 1.0
-//#define MAX_SELECTION_DIST 100.0
+#define MAX_SELECTION_DIST 100.0
 
 class OBJECTMODEL
 {
