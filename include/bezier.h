@@ -43,7 +43,7 @@ public:
 	BEZIER();
 	~BEZIER();
 	void SetFromCorners(VERTEX fl, VERTEX fr, VERTEX bl, VERTEX br);
-	void Visualize(bool wireframe, bool fill);
+	void Visualize(bool wireframe, bool fill, VERTEX color);
 	void Attach(BEZIER & other);
 
 	int NumTris(int divs) {return divs*divs*2;}

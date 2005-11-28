@@ -73,7 +73,7 @@ void BEZIER::SetFromCorners(VERTEX fl, VERTEX fr, VERTEX bl, VERTEX br)
 	}
 }
 
-void BEZIER::Visualize(bool wireframe, bool fill)
+void BEZIER::Visualize(bool wireframe, bool fill, VERTEX color)
 {
 	if (!fill && !wireframe)
 		return;
@@ -104,13 +104,13 @@ void BEZIER::Visualize(bool wireframe, bool fill)
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
 		//glColor4f(.5,.6,.5,0.1);
-		glColor4f(0,1,0,0.1);
+		glColor4f(color.x, color.y, color.z,0.1);
 		DrawControlPoints();
 		
 		glEnable(GL_DEPTH_TEST);
 		glDisable(GL_BLEND);
 		glLineWidth(2.0);
-		glColor4f(0,1,0,1);
+		glColor4f(color.x, color.y, color.z,1);
 		DrawControlPoints();
 	}
 	

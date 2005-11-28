@@ -143,8 +143,8 @@ OBJECTS objects;
 //NET net;
 //MULTIPLAY multiplay;
 
-TRACK testtrack;
-ROADSTRIP * teststrip;
+TRACK track;
+ROADSTRIP * activestrip;
 
 //VAMOSWORLD world;
 //Vamos_Track::Strip_Track *road;
@@ -531,69 +531,108 @@ void handleKeyPress( SDL_keysym *keysym )
 			break;*/
 			
 		case SDLK_BACKSPACE:
-			if (teststrip != NULL)
+			if (activestrip != NULL)
 			{
-				if (teststrip->DeleteLastPatch())
-					mq1.AddMessage("Deleted patch");
-				else
-					mq1.AddMessage("Can't delete patch: no patches on this road");
-				
-				lastbez = teststrip->GetLastPatch();
-				if (lastbez != NULL)
+				if (activestrip->DeleteLastPatch())
 				{
-					editordata.bezinput[0] = lastbez->points[0][0];
-					editordata.bezinput[1] = lastbez->points[0][3];
+					if (activestrip->NumPatches() == 0)
+					{
+						mq1.AddMessage("Deleted patch and empty road");
+						track.Delete(activestrip);
+						activestrip = NULL;
+						editordata.numbezinput = 0;
+					}
+					else
+					{
+						mq1.AddMessage("Deleted patch");
+						lastbez = activestrip->GetLastPatch();
+						if (lastbez != NULL)
+						{
+							editordata.bezinput[0] = lastbez->points[0][0];
+							editordata.bezinput[1] = lastbez->points[0][3];
+						}
+						else
+							editordata.numbezinput = 0;
+					}
 				}
 				else
-					editordata.numbezinput = 0;
+					mq1.AddMessage("Can't delete patch: no patches on this road");
 			}
 			else
 			{
-				mq1.AddMessage("Can't delete patch: no roads");
+				mq1.AddMessage("Can't delete patch: no road selected");
 			}
 			break;
 			
 		case 'h':
 			editordata.helppage++;
 			break;
+		
+		case 'd':
+			if (activestrip != NULL)
+			{
+				track.Delete(activestrip);
+				mq1.AddMessage("Deleted road.");
+			}
+			else
+			{
+				mq1.AddMessage("Can't delete road: no road selected.");
+			}
+			activestrip = NULL;
+			editordata.numbezinput = 0;
+			break;
+		
+		case 'n':
+			//create a new road
+			mq1.AddMessage("Ready to create new road, add patches.");
+			activestrip = NULL;
+			editordata.numbezinput = 0;
+			break;
 			
 		case 's':
 			mq1.AddMessage("Saved to file");
-			testtrack.Write(editordata.activetrack);
+			track.Write(editordata.activetrack);
 			break;
 		
 		case 'a':
-			lastbez = teststrip->GetLastPatch();
-			if (lastbez != NULL && editordata.numbezinput == 2)
+			if (activestrip != NULL)
 			{
-				fl = lastbez->points[0][0];
-				fr = lastbez->points[0][3];
-				bl = lastbez->points[3][0];
-				br = lastbez->points[3][3];
-				
-				l = objects.AutoFindClosestVert(fl, (fl-bl), tvec1);
-				r = objects.AutoFindClosestVert(fr, (fr-br), tvec2);
-				
-				if (l && r)
+				lastbez = activestrip->GetLastPatch();
+				if (lastbez != NULL && editordata.numbezinput == 2)
 				{
-					patch.SetFromCorners(tvec1, tvec2, editordata.bezinput[0], editordata.bezinput[1]);
-					teststrip->Add(patch);
+					fl = lastbez->points[0][0];
+					fr = lastbez->points[0][3];
+					bl = lastbez->points[3][0];
+					br = lastbez->points[3][3];
 					
-					//editordata.numbezinput = 0;
-					editordata.numbezinput = 2;
+					l = objects.AutoFindClosestVert(fl, (fl-bl), tvec1);
+					r = objects.AutoFindClosestVert(fr, (fr-br), tvec2);
 					
-					editordata.bezinput[0] = tvec1;
-					editordata.bezinput[1] = tvec2;
-					mq1.AddMessage("Auto-traced road");
+					if (l && r)
+					{
+						patch.SetFromCorners(tvec1, tvec2, editordata.bezinput[0], editordata.bezinput[1]);
+						activestrip->Add(patch);
+						
+						//editordata.numbezinput = 0;
+						editordata.numbezinput = 2;
+						
+						editordata.bezinput[0] = tvec1;
+						editordata.bezinput[1] = tvec2;
+						mq1.AddMessage("Auto-traced road");
+					}
+					else
+					{
+						mq1.AddMessage("Can't auto-trace road: found no candidate points");
+					}
 				}
 				else
 				{
-					mq1.AddMessage("Can't auto-trace road: found no candidate points");
+					mq1.AddMessage("Can't auto-trace road: must start road first");
 				}
 			}
 			else
 			{
-				mq1.AddMessage("Can't auto-trace road: must start road first");
+				mq1.AddMessage("Can't auto-trace road: no roads selected");
 			}
 			break;
 		
@@ -673,7 +712,7 @@ bool LoadWorld()
 	editordata.numbezinput = 0;
 	editordata.mousebounce[1] = false;
 	
-	teststrip = testtrack.AddNewRoad();
+	//teststrip = track.AddNewRoad();
 	
 	//begin loading world
 	
@@ -688,7 +727,7 @@ bool LoadWorld()
 	objects.LoadObjectsFromFolder(settings.GetDataDir() + "/tracks/" + 
 			editordata.activetrack + "/objects/");
 	
-	testtrack.Load(editordata.activetrack);
+	track.Load(editordata.activetrack);
 	
 	//car_file = "s2000";
 	//ifstream csfile;
@@ -1157,15 +1196,15 @@ int drawGLScene( GLvoid )
 			
 			//nextpatch.Attach(thirdpatch);
 			
-			TRACK testtrack;
-			ROADSTRIP * teststrip = testtrack.AddNewRoad();
+			TRACK track;
+			ROADSTRIP * teststrip = track.AddNewRoad();
 			teststrip->Add(patch);
 			teststrip->Add(nextpatch);
 			teststrip->Add(thirdpatch);
 			
 			//teststrip.DeleteLastPatch();
 					
-			testtrack.VisualizeRoads(true, true);
+			track.VisualizeRoads(true, true);
 			
 			VERTEX down;
 			down.y = -1;
@@ -1220,7 +1259,13 @@ int drawGLScene( GLvoid )
 				//create bezier patch
 				BEZIER patch;
 				patch.SetFromCorners(editordata.bezinput[2], selvert, editordata.bezinput[0], editordata.bezinput[1]);
-				teststrip->Add(patch);
+				if (activestrip == NULL)
+				{
+					activestrip = track.AddNewRoad();
+					mq1.AddMessage("New road created to hold new patch.");
+				}
+				
+				activestrip->Add(patch);
 				
 				//editordata.numbezinput = 0;
 				editordata.numbezinput = 2;
@@ -1249,7 +1294,7 @@ int drawGLScene( GLvoid )
 		glColor4f(1,1,1,1);
 		glPopAttrib();
 		
-		testtrack.VisualizeRoads(true, false);
+		track.VisualizeRoads(true, false);
 		
 		//image in the framebuffer is now complete.
 		
@@ -1420,6 +1465,7 @@ int drawGLScene( GLvoid )
 	"Arrow keys\n"
 	"Page Up\n"
 	"A\n"
+	"N\n"
 	"S\n"
 	"BACKSPACE\n"
 	"ESCAPE\n"
@@ -1429,6 +1475,7 @@ int drawGLScene( GLvoid )
 	"Move around\n"
 	"Move forward very fast\n"
 	"Automatically try to create the next bezier patch on this road\n"
+	"Create a new road (the new road is created once you add patches to it)\n"
 	"Save the track\n"
 	"Delete the last bezier patch on this road\n"
 	"Quit the editor\n"

@@ -249,6 +249,8 @@ UTILITY::UTILITY()
 {
 	error_log.open((settings.GetSettingsDir() + "/logs/utility.log").c_str());
 	initdone = false;
+	
+	srand(1337);
 }
 
 extern bool verbose_output;
@@ -821,4 +823,20 @@ int UTILITY::IntersectTriangleF(float orig[3], float dir[3],
    *t = DOT(edge2, qvec) * inv_det;
 #endif
    return 1;
+}
+
+float UTILITY::randf(float min, float max)
+{
+	if (min > max)
+	{
+		float temp = min;
+		min = max;
+		max = temp;
+	}
+	
+	float r = (float) rand() / (float) RAND_MAX;
+
+	r *= max-min;
+	r += min;
+	return r;
 }

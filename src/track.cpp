@@ -201,13 +201,13 @@ BEZIER * ROADSTRIP::GetLastPatch()
 	return NULL;
 }
 
-void ROADSTRIP::Visualize (bool wireframe, bool fill)
+void ROADSTRIP::Visualize (bool wireframe, bool fill, VERTEX color)
 {
 	BEZIERNODE * curnode = patchnodes;
 	
 	while (curnode != NULL)
 	{
-		curnode->patch.Visualize(wireframe, fill);
+		curnode->patch.Visualize(wireframe, fill, color);
 		
 		curnode = curnode->next;
 	}
@@ -239,20 +239,75 @@ void TRACK::ClearRoads()
 
 ROADSTRIP * TRACK::AddNewRoad()
 {
-	ROADSTRIPNODE * oldfirst = roads;
+	/*ROADSTRIPNODE * oldfirst = roads;
 	roads = new ROADSTRIPNODE;
 	roads->next = oldfirst;
 	
-	return &(roads->road);
+	return &(roads->road);*/
+	
+	ROADSTRIPNODE * lastnode = NULL;
+	ROADSTRIPNODE * curnode = roads;
+	
+	while (curnode != NULL)
+	{
+		lastnode = curnode;
+		curnode = curnode->next;
+	}
+
+	//only continue if there is a last node and it really is the last node
+	if (lastnode != NULL && lastnode->next == NULL)
+	{
+		lastnode->next = new ROADSTRIPNODE;
+		//lastnode->next->patch.CopyFrom(newpatch);
+		
+		//optional....
+		//lastnode->patch.Attach(lastnode->next->patch);
+		return &(lastnode->next->road);
+	}
+	
+	if (roads == NULL)
+	{
+		roads = new ROADSTRIPNODE;
+		return &(roads->road);
+	}
+	
+	return NULL;
 }
 
 void TRACK::VisualizeRoads(bool wireframe, bool fill)
 {
 	ROADSTRIPNODE * curnode = roads;
 	
+	VERTEX color;
+	color.y = 1;
+	
+	utility.seedrandom(1234);
+	
 	while (curnode != NULL)
 	{
-		curnode->road.Visualize(wireframe, fill);
+		//randomize color!
+		color.x = utility.randf(0.0,1.0);
+		color.y = utility.randf(0.0,1.0);
+		color.z = utility.randf(0.0,1.0);
+		
+		if (color.len() < 0.1)
+		{
+			color.y = 1.0;
+		}
+		
+		float maxval = 0.0;
+		if (color.x > maxval)
+			maxval = color.x;
+		if (color.y > maxval)
+			maxval = color.y;
+		if (color.z > maxval)
+			maxval = color.z;
+		
+		color.x = (1.0/maxval)*color.x;
+		color.y = (1.0/maxval)*color.y;
+		color.z = (1.0/maxval)*color.z;
+		
+		curnode->road.Visualize(wireframe, fill, color);
 		curnode = curnode->next;
 	}
 }
@@ -312,4 +367,49 @@ void TRACK::Load(string trackname)
 		newroad = AddNewRoad();
 		newroad->ReadFrom(trackfile);
 	}
+}
+
+void TRACK::Delete(ROADSTRIP * striptodel)
+{
+	bool deleted = false;
+	
+	ROADSTRIPNODE * lastnode = NULL;
+	ROADSTRIPNODE * curnode = roads;
+	
+	while (curnode != NULL)
+	{
+		/*
+		NOTE THAT THE BACKSPACE BUTTON NEEDS TO CALL THIS (AND CLEAR 
+		 ACTIVESTRIP TO NULL) TO ENSURE THERE ARE NO EMPTY ROADS!
+		*/
+		
+		if (striptodel == &(curnode->road))
+		{
+			curnode = curnode->next;
+
+			if (lastnode == NULL)
+			{
+				roads = curnode;
+			}
+			else
+			{
+				lastnode->next = curnode;
+			}
+			
+			delete striptodel;
+			
+			deleted = true;
+		}
+		else
+		{
+			lastnode = curnode;
+			curnode = curnode->next;
+		}
+	}
+	
+	//fail safe stuff
+	if (!deleted)
+		delete striptodel;
+	
+	striptodel = NULL;
 }

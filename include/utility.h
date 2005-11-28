@@ -93,6 +93,8 @@ public:
 	int IntersectTriangleF(float orig[3], float dir[3],
                    float vert0[3], float vert1[3], float vert2[3],
                    float *t, float *u, float *v);
+	float randf(float min, float max);
+	void seedrandom(int seed) {srand(seed);}
 };
 
 #define _UTILITY_H

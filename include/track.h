@@ -39,7 +39,6 @@ class ROADSTRIP
 private:
 	BEZIERNODE * patchnodes;
 	void ClearPatches();
-	int NumPatches();
 	
 public:
 	ROADSTRIP();
@@ -49,8 +48,9 @@ public:
 	bool ReadFrom(ifstream &openfile);
 	bool WriteTo(ofstream &openfile);
 	bool DeleteLastPatch();
-	void Visualize (bool wireframe, bool fill);
+	void Visualize (bool wireframe, bool fill, VERTEX color);
 	BEZIER * GetLastPatch();
+	int NumPatches();
 };
 
 class ROADSTRIPNODE
@@ -75,6 +75,7 @@ public:
 	void ClearRoads();
 	void Write(string trackname);
 	void Load(string trackname);
+	void Delete(ROADSTRIP * striptodel);
 };
 
 #define _TRACK_H
