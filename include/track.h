@@ -51,6 +51,7 @@ public:
 	void Visualize (bool wireframe, bool fill, VERTEX color);
 	BEZIER * GetLastPatch();
 	int NumPatches();
+	bool Collide(VERTEX origin, VERTEX direction, VERTEX &outtri, bool closest);
 };
 
 class ROADSTRIPNODE
@@ -71,11 +72,12 @@ public:
 	TRACK();
 	~TRACK();
 	ROADSTRIP * AddNewRoad();
-	void VisualizeRoads(bool wireframe, bool fill);
+	void VisualizeRoads(bool wireframe, bool fill, ROADSTRIP * selectedroad);
 	void ClearRoads();
 	void Write(string trackname);
 	void Load(string trackname);
 	void Delete(ROADSTRIP * striptodel);
+	bool Collide(VERTEX origin, VERTEX direction, VERTEX &outtri, bool closest, ROADSTRIP * &collideroad);
 };
 
 #define _TRACK_H

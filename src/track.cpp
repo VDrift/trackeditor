@@ -213,6 +213,44 @@ void ROADSTRIP::Visualize (bool wireframe, bool fill, VERTEX color)
 	}
 }
 
+bool ROADSTRIP::Collide(VERTEX origin, VERTEX direction, VERTEX &outtri, bool closest)
+{
+	BEZIERNODE * curnode = patchnodes;
+	
+	bool collide;
+	bool hadcollision = false;
+	VERTEX tvert;
+	
+	while (curnode != NULL)
+	{
+		//curnode->patch.Visualize(wireframe, fill, color);
+		collide = curnode->patch.Collide(origin, direction, tvert);
+		if (collide && !closest)
+		{
+			outtri = tvert;
+			return true;
+		}
+		else if (collide && closest)
+		{
+			if ((hadcollision && (origin - tvert).len() < (origin - outtri).len()) || !hadcollision)
+			{
+				outtri = tvert;
+			}
+			
+			hadcollision = true;
+		}
+		
+		curnode = curnode->next;
+	}
+	
+	if (closest && hadcollision)
+	{
+		return true;
+	}
+	
+	return false;
+}
+
 
 //----------------- TRACK --------------
 
@@ -274,18 +312,19 @@ ROADSTRIP * TRACK::AddNewRoad()
 	return NULL;
 }
 
-void TRACK::VisualizeRoads(bool wireframe, bool fill)
+void TRACK::VisualizeRoads(bool wireframe, bool fill, ROADSTRIP * selectedroad)
 {
 	ROADSTRIPNODE * curnode = roads;
 	
 	VERTEX color;
-	color.y = 1;
+	color.zero();
+	color.z = 1;
 	
-	utility.seedrandom(1234);
+	//utility.seedrandom(1234);
 	
 	while (curnode != NULL)
 	{
-		//randomize color!
+		/*//randomize color!
 		color.x = utility.randf(0.0,1.0);
 		color.y = utility.randf(0.0,1.0);
 		color.z = utility.randf(0.0,1.0);
@@ -305,7 +344,16 @@ void TRACK::VisualizeRoads(bool wireframe, bool fill)
 		
 		color.x = (1.0/maxval)*color.x;
 		color.y = (1.0/maxval)*color.y;
-		color.z = (1.0/maxval)*color.z;
+		color.z = (1.0/maxval)*color.z;*/
+		
+		color.zero();
+		if (&(curnode->road) == selectedroad)
+			color.y = 1;
+		else
+		{
+			color.y = 0.5;
+			color.z = 0.5;
+		}
 		
 		curnode->road.Visualize(wireframe, fill, color);
 		curnode = curnode->next;
@@ -412,4 +460,44 @@ void TRACK::Delete(ROADSTRIP * striptodel)
 		delete striptodel;
 	
 	striptodel = NULL;
+}
+
+bool TRACK::Collide(VERTEX origin, VERTEX direction, VERTEX &outtri, bool closest, ROADSTRIP * &collideroad)
+{
+	ROADSTRIPNODE * curnode = roads;
+	
+	bool collide;
+	bool hadcollision = false;
+	VERTEX tvert;
+	
+	while (curnode != NULL)
+	{
+		//curnode->patch.Visualize(wireframe, fill, color);
+		collide = curnode->road.Collide(origin, direction, tvert, closest);
+		if (collide && !closest)
+		{
+			outtri = tvert;
+			collideroad = &(curnode->road);
+			return true;
+		}
+		else if (collide && closest)
+		{
+			if ((hadcollision && (origin - tvert).len() < (origin - outtri).len()) || !hadcollision)
+			{
+				outtri = tvert;
+				collideroad = &(curnode->road);
+			}
+			
+			hadcollision = true;
+		}
+		
+		curnode = curnode->next;
+	}
+	
+	if (closest && hadcollision)
+	{
+		return true;
+	}
+	
+	return false;
 }

@@ -594,6 +594,18 @@ void handleKeyPress( SDL_keysym *keysym )
 			track.Write(editordata.activetrack);
 			break;
 		
+		case 'r':
+			//mq1.AddMessage("Saved to file");
+			tvec1.zero();
+			tvec1.z = -1;
+			tvec2 = cam.dir.ReturnConjugate().RotateVec(tvec1);
+			l = track.Collide(cam.position.ScaleR(-1.0), tvec2, tvec1, true, activestrip);
+			if (!l)
+			{
+				mq1.AddMessage("Can't select road: no road found under cursor");
+			}
+			break;
+		
 		case 'a':
 			if (activestrip != NULL)
 			{
@@ -1294,7 +1306,7 @@ int drawGLScene( GLvoid )
 		glColor4f(1,1,1,1);
 		glPopAttrib();
 		
-		track.VisualizeRoads(true, false);
+		track.VisualizeRoads(true, false, activestrip);
 		
 		//image in the framebuffer is now complete.
 		
@@ -1466,6 +1478,7 @@ int drawGLScene( GLvoid )
 	"Page Up\n"
 	"A\n"
 	"N\n"
+	"R\n"
 	"S\n"
 	"BACKSPACE\n"
 	"ESCAPE\n"
@@ -1476,6 +1489,7 @@ int drawGLScene( GLvoid )
 	"Move forward very fast\n"
 	"Automatically try to create the next bezier patch on this road\n"
 	"Create a new road (the new road is created once you add patches to it)\n"
+	"Select the road under the cursor\n"
 	"Save the track\n"
 	"Delete the last bezier patch on this road\n"
 	"Quit the editor\n"
