@@ -365,6 +365,9 @@ void TRACK::Write(string trackname)
 	ofstream trackfile;
 	trackfile.open((settings.GetDataDir() + "/tracks/" + trackname + "/roads.trk").c_str());
 	
+	VERTEX sl = GetStart();
+	trackfile << sl.x << " " << sl.y << " " << sl.z << endl << endl;
+	
 	trackfile << NumRoads() << endl << endl;
 	
 	ROADSTRIPNODE * curnode = roads;
@@ -396,7 +399,15 @@ void TRACK::Load(string trackname)
 	ifstream trackfile;
 	trackfile.open((settings.GetDataDir() + "/tracks/" + trackname + "/roads.trk").c_str());
 	
-	int numroads, i; 
+	int numroads, i;
+	
+	VERTEX sl;
+	
+	trackfile >> sl.x;
+	trackfile >> sl.y;
+	trackfile >> sl.z;
+	
+	SetStart(sl);
 	
 	if (trackfile)
 	{

@@ -67,6 +67,7 @@ class TRACK
 private:
 	ROADSTRIPNODE * roads;
 	int NumRoads();
+	VERTEX startloc;
 	
 public:
 	TRACK();
@@ -78,6 +79,8 @@ public:
 	void Load(string trackname);
 	void Delete(ROADSTRIP * striptodel);
 	bool Collide(VERTEX origin, VERTEX direction, VERTEX &outtri, bool closest, ROADSTRIP * &collideroad);
+	void SetStart(VERTEX newloc) {startloc = newloc;}
+	VERTEX GetStart() {return startloc;}
 };
 
 #define _TRACK_H

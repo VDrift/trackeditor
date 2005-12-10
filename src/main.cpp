@@ -594,6 +594,10 @@ void handleKeyPress( SDL_keysym *keysym )
 			track.Write(editordata.activetrack);
 			break;
 		
+		case 'l':
+			track.SetStart(cam.position.ScaleR(-1));
+			break;
+		
 		case 'r':
 			//mq1.AddMessage("Saved to file");
 			tvec1.zero();
@@ -1477,6 +1481,7 @@ int drawGLScene( GLvoid )
 	"Arrow keys\n"
 	"Page Up\n"
 	"A\n"
+	"L\n"
 	"N\n"
 	"R\n"
 	"S\n"
@@ -1488,6 +1493,7 @@ int drawGLScene( GLvoid )
 	"Move around\n"
 	"Move forward very fast\n"
 	"Automatically try to create the next bezier patch on this road\n"
+	"Set the car start location to the current camera position\n"
 	"Create a new road (the new road is created once you add patches to it)\n"
 	"Select the road under the cursor\n"
 	"Save the track\n"
