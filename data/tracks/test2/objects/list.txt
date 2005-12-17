@@ -1,0 +1,11 @@
+#VDrift object list file format v0.1
+
+#format is:
+#model filename (no spaces allowed)
+#x y z (position -- note that y is a delta from the terrain height)
+#rotation (in radians)
+
+# track test
+trk1.joe
+0 0 0
+0
