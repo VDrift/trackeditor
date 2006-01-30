@@ -217,6 +217,8 @@ public:
 
 	bool loadedfile;
 	
+	bool goodnorms;
+	
 	inline void ColorFromNormal(VERTEX &norm, VERTEX &ldir);
 	inline void TexCoordFromNormal(VERTEX &norm, VERTEX &ldir);
 

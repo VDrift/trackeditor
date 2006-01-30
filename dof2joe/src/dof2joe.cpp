@@ -412,6 +412,8 @@ bool ReadGOB1(FILE * f, int chunklen, int objid)
 						models[objid].pObject->frames[0].normals = new JOEVertex [models[objid].pObject->frames[0].num_verts];
 						models[objid].pObject->frames[0].texcoords = new JOETexCoord [models[objid].pObject->frames[0].num_verts];
 						
+						models[objid].goodnorms = false;
+						
 						for (unsigned int idx = 0; idx < (unsigned int) models[objid].pObject->frames[0].num_verts; idx++)
 						{
 							/*for (unsigned int n = 0; n < 3; n++)
@@ -460,6 +462,8 @@ bool ReadGOB1(FILE * f, int chunklen, int objid)
 					}
 					else
 					{
+						models[objid].goodnorms = true;
+						
 						for (unsigned int idx = 0; idx < (unsigned int) models[objid].pObject->frames[0].num_normals; idx++)
 						{
 							for (unsigned int n = 0; n < 3; n++)
@@ -517,7 +521,7 @@ bool ReadGOB1(FILE * f, int chunklen, int objid)
 					{
 						for (unsigned int idx = 0; idx < (unsigned int) models[objid].pObject->frames[0].num_texcoords; idx++)
 						{
-							models[objid].pObject->frames[0].texcoords[idx].u = 1.0-array[idx*2+0];
+							models[objid].pObject->frames[0].texcoords[idx].u = array[idx*2+0];
 							models[objid].pObject->frames[0].texcoords[idx].v = 1.0-array[idx*2+1];
 						}
 					}
@@ -777,8 +781,65 @@ bool LoadDOF(string filename)
 	return true;
 }
 
+void GenerateNormals(JOEMODEL & obj)
+{
+	//for now, I use a naive one normal per face 
+	// normal generation approach (flat shading)
+	
+	if (obj.pObject != NULL)
+	{
+		for (int idx = 0; idx < obj.pObject->info.num_frames; idx++)
+		{
+			//clear out old normals
+			delete [] obj.pObject->frames[idx].normals;
+			
+			//generate new memory
+			obj.pObject->frames[idx].num_normals = obj.pObject->info.num_faces;
+			obj.pObject->frames[idx].normals = new JOEVertex [obj.pObject->info.num_faces];
+			
+			for (int f = 0; f < obj.pObject->info.num_faces; f++)
+			{
+				//get verts
+				VERTEX vert[3];
+				for (int v = 0; v < 3; v++)
+				{
+					int vnum = obj.pObject->frames[idx].faces[f].vertexIndex[v];
+					vert[v].Set(obj.pObject->frames[idx].verts[vnum].vertex);
+					
+					//flip axes around
+					float tval = vert[v].x;
+					vert[v].x = vert[v].y;
+					vert[v].y = vert[v].z;
+					vert[v].z = -tval;
+				}
+				
+				//generate normal
+				VERTEX normal;
+				normal = (vert[2] - vert[0]).cross(vert[1] - vert[0]);
+				normal = normal.normalize();
+				
+				//normal.DebugPrint();
+				
+				//set the normal
+				obj.pObject->frames[idx].normals[f].vertex[0] = normal.x;
+				obj.pObject->frames[idx].normals[f].vertex[1] = normal.y;
+				obj.pObject->frames[idx].normals[f].vertex[2] = normal.z;
+				
+				//set all normal indices to correspond to the new normal index
+				for (int v = 0; v < 3; v++)
+					obj.pObject->frames[idx].faces[f].normalIndex[v] = f;
+			}
+		}
+	}
+}
+
 void WriteObject(string filename, JOEMODEL & obj)
 {
+	if (obj.goodnorms == false)
+	{
+		GenerateNormals(obj);
+	}
+	
 	FILE * f = fopen (filename.c_str(), "wb");
 	
 	if (f == NULL)
@@ -858,7 +919,7 @@ void WriteObjects(string filename, string outpath, string inpath)
 				lf << buffer << endl;
 				sprintf(buffer, "%s.png", textures[models[o].textureid[0]].c_str());
 				lf << buffer << endl;
-				lf << "0 0 0\n0\n0" << endl;
+				lf << "1\n0 0 0\n0\n0" << endl;
 				
 				lf.close();
 			}

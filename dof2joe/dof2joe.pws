@@ -4,3 +4,31 @@ RunInTerminal=true
 
 [Project State]
 clean before build=false
+
+[filenumbers]
+0=1
+1=121
+2=905
+
+[filemarkers]
+0=
+1=
+2=
+
+[File View]
+filter.file.unmatch=*.so *.o *.a *.la
+filter.file.ignore.hidden=0
+filter.dir.ignore.hidden=0
+
+[filelist]
+0=/home/joe/code/VDrift-tracked/dof2joe/src/model.cpp
+1=/home/joe/code/VDrift-tracked/dof2joe/include/model.h
+2=/home/joe/code/VDrift-tracked/dof2joe/src/dof2joe.cpp
+
+[Project Tree]
+0=0
+1=0:0
+2=0:1
+
+[File Tree]
+0=0

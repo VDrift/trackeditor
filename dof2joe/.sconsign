@@ -1,5 +1,5 @@
 }qUdof2joeq(cSCons.Node.FS
 BuildInfo
-qoq}q(UbsigqU 16a943dc61dac44c89a2feaf1b636037qU	bimplicitq]q	Ubdependsq
+qoq}q(UbsigqU 8c62c4929516faaf1158eff9630f1d24qU	bimplicitq]q	Ubdependsq
 ]qUbdependsigsq]qUbactsigqU 5fa69a7a3e00e19f1e4484e3b82c3d51qUbimplicitsigsq]qUbactqU>g++ -o dof2joe dof2joe.o quat.o model.o -lGL -lGLU -lSDL_imageqUbsourcesq]q(Usrc/dof2joe.oqU
-src/quat.oqUsrc/model.oqeUbsourcesigsq]q(U 98085041fc16d487dc3ea1a8a7a90305qU 694cbd288095d6f4cd9db845afad4efeqU acecd8070f0f83833451581ebe2a3071qeubs.
+src/quat.oqUsrc/model.oqeUbsourcesigsq]q(U 334e467b2c6a9d0290f43a0e769d9ceeqU 694cbd288095d6f4cd9db845afad4efeqU 1c6c42b51ed62b9cccc7a193cff2b13aqeubs.
