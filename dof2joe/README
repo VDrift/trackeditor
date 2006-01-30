@@ -1,0 +1,24 @@
+To convert a file called "road.dof" to the joe format:
+
+dof2joe road.dof
+
+This will create road.dof-XX.joe files where XX is the object number (DOF files can contain multiple objects).  The program will also attempt to convert any textures that are referenced in the DOF file to png format by using 'nconvert' (http://perso.wanadoo.fr/pierre.g/xnview/en_nconvert.html).
+
+You can give wildcards to the program like so:
+
+dof2joe *.dof
+
+This will iterate for each file that matches the wildcards.
+
+The -p argument can be used to place the .joe files into a VDrift track object folder.  If your track objects folder is <object folder> and a list of DOF files (or wildcards) is <dof files> you can run:
+
+dof2joe -p <object folder> <dof files>
+
+For example:
+
+dof2joe -p ~/code/vdrift-branches/new-tracks/data/tracks/test3/objects/ ~/downloads/ruudskogen2/Ruudskogen/*.dof
+
+Using the -p argument places output .joe files in the specified folder, instructs Nconvert to place .png textures in the specified objects folder, and also appends the appropriate entries to the VDrift track object list.txt file (objects default to non-drivable, non-collidable).  Note that each time the conversion is run the file is appended again, and no checks are made to see if the files already have entries, so backup your list.txt file before running dof2joe.
+
+Joe Venzon
+vdrift.net
