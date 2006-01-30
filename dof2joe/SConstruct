@@ -1,0 +1,6 @@
+env = Environment(CPPPATH='include')
+env.Append(LIBS = ['GL', 'GLU', 'SDL_image'])
+list = Split("""src/dof2joe.cpp
+		src/quat.cpp
+		src/model.cpp""")
+env.Program('dof2joe', list)
