@@ -243,17 +243,22 @@ void OBJECTS::LoadObjectsFromFolder(string objectpath)
 	
 	if (o)
 	{
-		string m;
+		string m, t;
 		VERTEX p;
-		float r;
+		float r = 0;
 		
 		while (!o.eof())
 		{
 			m = utility.sGetParam(o);
+			utility.sGetParam(o); //texture
+			utility.bGetParam(o); //mipmap
+			utility.bGetParam(o); //fullbright
+			utility.bGetParam(o); //skybox
 			p.x = utility.fGetParam(o);
 			p.y = utility.fGetParam(o);
 			p.z = utility.fGetParam(o);
-			r = utility.fGetParam(o);
+			utility.bGetParam(o); //collide-able
+			utility.bGetParam(o); //drive-able
 			
 			if (m != "" && m != utility.GetEOFString())
 				Add(p, r, m);

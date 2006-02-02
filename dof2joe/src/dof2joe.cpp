@@ -919,7 +919,7 @@ void WriteObjects(string filename, string outpath, string inpath)
 				lf << buffer << endl;
 				sprintf(buffer, "%s.png", textures[models[o].textureid[0]].c_str());
 				lf << buffer << endl;
-				lf << "1 0\n0 0 0\n0\n0" << endl;
+				lf << "1 0 0\n0 0 0\n0\n0" << endl;
 				
 				lf.close();
 			}

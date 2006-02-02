@@ -203,13 +203,29 @@ BEZIER * ROADSTRIP::GetLastPatch()
 
 void ROADSTRIP::Visualize (bool wireframe, bool fill, VERTEX color)
 {
+	int tot = 0;
+	
 	BEZIERNODE * curnode = patchnodes;
 	
 	while (curnode != NULL)
 	{
-		curnode->patch.Visualize(wireframe, fill, color);
+		if (tot < 50)
+			curnode->patch.Visualize(wireframe, fill, color);
+		curnode = curnode->next;
+		tot ++;
+	}
+	
+	curnode = patchnodes;
+	
+	int count = 0;
+	
+	while (curnode != NULL)
+	{
+		if (tot - count < 50)
+			curnode->patch.Visualize(wireframe, fill, color);
 		
 		curnode = curnode->next;
+		count++;
 	}
 }
 
@@ -320,6 +336,8 @@ void TRACK::VisualizeRoads(bool wireframe, bool fill, ROADSTRIP * selectedroad)
 	color.zero();
 	color.z = 1;
 	
+	//int count = 0;
+	
 	//utility.seedrandom(1234);
 	
 	while (curnode != NULL)
@@ -355,8 +373,11 @@ void TRACK::VisualizeRoads(bool wireframe, bool fill, ROADSTRIP * selectedroad)
 			color.z = 0.5;
 		}
 		
+		//if (count < 50)
 		curnode->road.Visualize(wireframe, fill, color);
 		curnode = curnode->next;
+		
+		//count++;
 	}
 }
 
