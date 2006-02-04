@@ -203,30 +203,51 @@ BEZIER * ROADSTRIP::GetLastPatch()
 
 void ROADSTRIP::Visualize (bool wireframe, bool fill, VERTEX color)
 {
-	int tot = 0;
+	//int tot = 0;
 	
 	BEZIERNODE * curnode = patchnodes;
 	
-	while (curnode != NULL)
+	/*while (curnode != NULL)
 	{
-		if (tot < 50)
-			curnode->patch.Visualize(wireframe, fill, color);
+		if (tot < 50) curnode->patch.Visualize(wireframe, fill, color);
 		curnode = curnode->next;
 		tot ++;
 	}
 	
-	curnode = patchnodes;
+	curnode = patchnodes;*/
 	
 	int count = 0;
+	int drawn = 0;
 	
 	while (curnode != NULL)
 	{
-		if (tot - count < 50)
+		//if (tot - count < 50)
+		bool drawme = true;
+		//VERTEX pos = curnode->patch.center+cam.position;
+		VERTEX & pos = curnode->patch.center;
+		for (int i=0;i<6;i++) 
+		{
+			float rd=cam.frustum[i][0]*pos.x+
+			   cam.frustum[i][1]*pos.y+
+			   cam.frustum[i][2]*pos.z+
+			   cam.frustum[i][3];
+			if (rd<=-curnode->patch.radius)
+			{
+				drawme = false;
+			}
+		}
+		
+		if (drawme)
+		{
 			curnode->patch.Visualize(wireframe, fill, color);
+			drawn++;
+		}
 		
 		curnode = curnode->next;
 		count++;
 	}
+	
+	//cout << drawn << "/" << count << endl;
 }
 
 bool ROADSTRIP::Collide(VERTEX origin, VERTEX direction, VERTEX &outtri, bool closest)

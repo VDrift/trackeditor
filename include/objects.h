@@ -11,6 +11,8 @@
 #include <cmath>
 #include <cassert>
 
+#include <list>
+
 //#include "terrain.h"
 #include "utility.h"
 #include "quat.h"

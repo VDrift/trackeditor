@@ -404,7 +404,7 @@ void Update()
 			//particle.Update(timefactor, fps);
 			//particle.Update(1.0, 1.0/FRAME_TIME);
 			
-			//cam.ExtractFrustum();
+			cam.ExtractFrustum();
 			
 			//float timepassed = (timefactor/fps)/86400.0;
 			float timepassed = (FRAME_TIME)/86400.0;

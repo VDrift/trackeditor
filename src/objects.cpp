@@ -339,6 +339,8 @@ bool OBJECTS::AutoFindClosestVert(VERTEX orig, VERTEX dir, VERTEX &out)
 	//dir = dir.normalize().ScaleR(MAX_SELECTION_DIST);
 	dir = dir.normalize();
 	
+	list <VERTEX *> candidates;
+	
 	OBJECTNODE * curpos = object_list;
 	while (curpos != NULL)
 	{

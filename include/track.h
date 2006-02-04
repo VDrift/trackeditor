@@ -25,6 +25,8 @@
 #ifndef _TRACK_H
 
 #include "bezier.h"
+#include "camera.h"
+#include "globals.h"
 
 class BEZIERNODE
 {

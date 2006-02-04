@@ -57,6 +57,10 @@ public:
 	bool WriteTo(ofstream &openfile);
 
 	VERTEX points[4][4];
+	
+	VERTEX center;
+	float radius;
+	void GenerateCenterAndRadius();
 };
 
 #define _BEZIER_H

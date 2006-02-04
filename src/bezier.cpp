@@ -71,6 +71,8 @@ void BEZIER::SetFromCorners(VERTEX fl, VERTEX fr, VERTEX bl, VERTEX br)
 		points[1][i] = points[0][i] + temp.normalize().ScaleR(temp.len()/3.0);
 		points[2][i] = points[0][i] + temp.normalize().ScaleR(2.0*temp.len()/3.0);
 	}
+	
+	GenerateCenterAndRadius();
 }
 
 void BEZIER::Visualize(bool wireframe, bool fill, VERTEX color)
@@ -403,4 +405,24 @@ bool BEZIER::WriteTo(ofstream &openfile)
 	}
 	
 	return true;
+}
+
+void BEZIER::GenerateCenterAndRadius()
+{
+	int i;
+	VERTEX v[4];
+	v[0] = points[0][0];
+	v[1] = points[0][3];
+	v[2] = points[3][0];
+	v[3] = points[3][3];
+	for (i=0;i<4;i++)
+		center = center + v[i];
+	center.Scale(0.25);
+	radius = 0;
+	for (i=0;i<4;i++)
+	{
+		float diff = (v[i] - center).len();
+		if (diff > radius)
+			radius = diff;
+	}
 }
