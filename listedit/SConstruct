@@ -1,0 +1,4 @@
+env = Environment(CPPPATH='include')
+#env.Append(LIBS = ['GL', 'GLU', 'SDL_image'])
+list = Split("""src/listedit.cpp""")
+env.Program('listedit', list)
