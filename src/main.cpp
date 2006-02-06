@@ -487,6 +487,7 @@ void handleKeyPress( SDL_keysym *keysym )
 	BEZIER * lastbez;
 	BEZIER patch;
 	bool l, r;
+	int i;
 	
 	//else if (timefactor == 0 && !menu.InMenu()) timefactor = 0;
 		//		else timefactor = 1.0;
@@ -649,6 +650,51 @@ void handleKeyPress( SDL_keysym *keysym )
 			else
 			{
 				mq1.AddMessage("Can't auto-trace road: no roads selected");
+			}
+			break;
+			
+		case 'f':
+			for (i = 0; i < 25; i++)
+			{
+				if (activestrip != NULL)
+				{
+					lastbez = activestrip->GetLastPatch();
+					if (lastbez != NULL && editordata.numbezinput == 2)
+					{
+						fl = lastbez->points[0][0];
+						fr = lastbez->points[0][3];
+						bl = lastbez->points[3][0];
+						br = lastbez->points[3][3];
+						
+						l = objects.AutoFindClosestVert(fl, (fl-bl), tvec1);
+						r = objects.AutoFindClosestVert(fr, (fr-br), tvec2);
+						
+						if (l && r)
+						{
+							patch.SetFromCorners(tvec1, tvec2, editordata.bezinput[0], editordata.bezinput[1]);
+							activestrip->Add(patch);
+							
+							//editordata.numbezinput = 0;
+							editordata.numbezinput = 2;
+							
+							editordata.bezinput[0] = tvec1;
+							editordata.bezinput[1] = tvec2;
+							mq1.AddMessage("Auto-traced road");
+						}
+						else
+						{
+							mq1.AddMessage("Can't auto-trace road: found no candidate points");
+						}
+					}
+					else
+					{
+						mq1.AddMessage("Can't auto-trace road: must start road first");
+					}
+				}
+				else
+				{
+					mq1.AddMessage("Can't auto-trace road: no roads selected");
+				}
 			}
 			break;
 		
@@ -1480,7 +1526,7 @@ int drawGLScene( GLvoid )
 	"Mouse left click\n"
 	"Arrow keys\n"
 	"Page Up\n"
-	"A\n"
+	"A, F\n"
 	"L\n"
 	"N\n"
 	"R\n"
@@ -1492,7 +1538,7 @@ int drawGLScene( GLvoid )
 	"Select highligted vertex\n"
 	"Move around\n"
 	"Move forward very fast\n"
-	"Automatically try to create the next bezier patch on this road\n"
+	"Automatically try to create the next bezier patch on this road (F: 25 at a time)\n"
 	"Set the car start location to the current camera position\n"
 	"Create a new road (the new road is created once you add patches to it)\n"
 	"Select the road under the cursor\n"

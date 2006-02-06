@@ -191,6 +191,7 @@ public:
 	int GetFaces() {if (!loadedfile) return 0; else return pObject->info.num_faces;}
 	int GetVerts(unsigned int frame) {if (loadedfile && frame < (unsigned int) pObject->info.num_frames) return pObject->frames[frame].num_verts; else return 0;}
 	JOEVertex * GetVertArray(unsigned int frame) {if (loadedfile && frame < (unsigned int) pObject->info.num_frames) return pObject->frames[frame].verts; else return NULL;}
+	JOEFace * GetFaceArray(unsigned int frame) {if (loadedfile && frame < (unsigned int) pObject->info.num_frames) return pObject->frames[frame].faces; else return NULL;}
 
 private:
 	

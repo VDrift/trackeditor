@@ -36,6 +36,7 @@ public:
 	VERTEX InvertR();
 	float * v3();
 	void zero();
+	bool equals(VERTEX other) {return (x == other.x && y == other.y && z == other.z);}
 
 	void DebugPrint();
 

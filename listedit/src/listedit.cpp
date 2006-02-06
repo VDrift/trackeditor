@@ -1,986 +1,560 @@
-#include <string>
 #include <iostream>
-#include <cstdio>
+#include <sstream>
+#include <fstream>
+
+#include <string>
+#include <sstream>
 
 #include <list>
 #include <vector>
 
+#include <stdexcept>
+
+#include <fnmatch.h>
+
 using namespace std;
 
-#include "model.h"
+vector <string> commandlist;
 
-unsigned int indent = 0;
-vector <string> textures;
-vector <JOEMODEL> models;
-
-bool verbose = false;
-
-#define VERBOSEPRINT(str) {if (verbose) {for (unsigned int i = 0; i < indent; i++) cout << "\t"; cout << str << endl;}}
-#define INDENTPRINT(str) {for (unsigned int i = 0; i < indent; i++) cout << "\t"; cout << str << endl;}
-#define ERRORPRINT(str) {for (unsigned int i = 0; i < indent; i++) cout << "\t"; cerr << "Error: " << str << endl;}
-
-bool ReadString(FILE * f, unsigned int btoread, string & outstr)
+struct listentry
 {
-	unsigned int bread;
-	
-	char buffer[btoread+1];
-	
-	bread = fread (buffer, 1, btoread, f);
-	
-	buffer[bread] = '\0';
-	
-	if (bread != btoread)
-	{
-		return false;
-	}
-	
-	outstr = buffer;
-	
-	return true;
+	list <string> entries;
+};
+
+list <listentry> listfile;
+
+bool Matches(string pattern, string haystack)
+{
+	return (fnmatch(pattern.c_str(),haystack.c_str(),0) == 0);
 }
 
-bool ReadInt(FILE * f, int & out)
+string sGetParam(ifstream &ffrom)
 {
-	unsigned int bread;
-	unsigned int btoread = 4;
-	
-	bread = fread (&out, 1, sizeof(int), f);
-	
-	if (bread != btoread)
+	string trashstr;
+	char trashchar[1024];
+
+	ffrom >> trashstr;
+
+	while (trashstr.c_str()[0] == '#' && !ffrom.eof() && trashstr != "")
 	{
-		return false;
+		ffrom.getline(trashchar, 1024, '\n');
+		ffrom >> trashstr;
 	}
 	
-	return true;
+	if (ffrom.eof() && trashstr.c_str()[0] == '#')
+		return "!!!EOF!!!";
+	else
+		return trashstr;
 }
 
-bool ReadShort(FILE * f, short & out)
+void ReadListFile(string filename)
 {
-	unsigned int bread;
-	unsigned int btoread = 2;
+	listfile.clear();
 	
-	bread = fread (&out, 1, sizeof(short), f);
-	
-	if (bread != btoread)
+	int numformat = 10;
+	ifstream ff("listformat.txt");
+	if (ff)
 	{
-		return false;
-	}
-	
-	return true;
-}
-
-bool ReadRString(FILE * f, string & instr)
-{
-	short slen = 0;
-	bool suc = ReadShort(f, slen);
-	//cout << endl << slen << endl;
-	if (!suc)
-		return false;
-	suc = ReadString(f, slen, instr);
-	if (!suc)
-		return false;
-	
-	return true;
-}
-
-bool ReadMAT0(FILE * f, int chunklen, int matid)
-{
-	string instr;
-	int inint;
-	bool suc = true;
-	
-	textures.resize(matid+1);
-	
-	/*suc = ReadString(f, chunklen, instr);
-	if (!suc)
-	{
-		for (unsigned int i = 0; i < indent; i++)
-			cout << "\t";
-		cout << "read error" << endl;
-		return false;
-	}*/
-	
-	suc = ReadString(f, 4, instr);
-	while (suc && instr != "MEND")
-	{
-		for (unsigned int i = 0; i < indent; i++)
-			cout << "\t";
-		cout << instr;
-		if (instr != "MEND")
-		{
-			suc = ReadInt(f, inint);
-			
-			cout << ": len " << inint << endl;
-			
-			if (instr == "MTEX")
-			{
-				suc = ReadInt(f, inint);
-				if (inint > 0)
-				{
-					for (unsigned int i = 0; i < indent; i++)
-						cout << "\t";
-					cout << inint << " texture(s)" << endl;
-				}
-				indent++;
-				for (unsigned int t = 0; t < (unsigned int) inint; t++)
-				{
-					if (ReadRString(f, instr))
-					{
-						for (unsigned int i = 0; i < indent; i++)
-							cout << "\t";
-						cout << instr << endl;
-						if (textures[matid].empty())
-						{
-							textures[matid] = instr;
-							INDENTPRINT("Using texture: " << textures[matid] << " for material " << matid);
-						}
-						else
-						{
-							INDENTPRINT("Already have texture: " << textures[matid] << " for material " << matid);
-						}
-					}
-					else
-					{
-						suc = false;
-						for (unsigned int i = 0; i < indent; i++)
-							cout << "\t";
-						cout << "read error" << endl;
-					}
-				}
-				indent--;
-			}
-			else if (instr == "MUVW")
-			{
-				struct
-				{
-					float uvwUoffset;
-					float uvwVoffset;
-					float uvwUtiling;
-					float uvwVtiling;
-					float uvwAngle;
-					float uvwBlur;
-					float uvwBlurOffset;
-				} uvwinfo;
-				
-				int bread = fread (&uvwinfo, 1, sizeof(uvwinfo), f);
-				if (bread != sizeof(uvwinfo))
-				{
-					suc = false;
-				}
-				
-				indent++;
-				INDENTPRINT(uvwinfo.uvwUoffset << "," << uvwinfo.uvwVoffset);
-				INDENTPRINT(uvwinfo.uvwUtiling << "," << uvwinfo.uvwVtiling);
-				indent--;
-			}
-			else if (instr == "MHDR")
-			{
-				string inname;
-				suc = ReadRString(f, inname);
-				suc = ReadRString(f, instr);
-				INDENTPRINT("Name: " << inname << "," << instr);
-			}
-			else if (instr == "MSUB")
-			{
-				suc = ReadInt(f, inint);
-				if (inint > 0)
-				{
-					for (unsigned int i = 0; i < indent; i++)
-						cout << "\t";
-					cout << inint << " sub-material(s)" << endl;
-				}
-				indent++;
-				for (unsigned int t = 0; t < (unsigned int) inint; t++)
-				{
-					int sublen = 0;
-					suc = ReadString(f, 4, instr);
-					if (suc && ReadInt(f, sublen))
-					{
-						INDENTPRINT(instr << ": len " << sublen);
-						ReadMAT0(f, sublen, matid);
-					}
-					else
-					{
-						suc = false;
-					}
-				}
-				indent--;
-			}
-			else
-			{
-				for (unsigned int i = 0; i < indent+1; i++)
-					cout << "\t";
-				cout << "skipping chunk" << endl;;
-				suc = ReadString(f, inint, instr);
-			}
-		}
-		
-		suc = ReadString(f, 4, instr);
-	}
-	
-	if (!suc)
-	{
-		for (unsigned int i = 0; i < indent; i++)
-			cout << "\t";
-		cout << "read error" << endl;
-	}
-	
-	return true;
-}
-
-bool ReadGOB1(FILE * f, int chunklen, int objid)
-{
-	string instr;
-	int inint;
-	bool suc = true;
-	
-	//models.resize(objid+1);
-	//models[objid].pObject = NULL;
-	
-	suc = ReadString(f, 4, instr);
-	while (suc && instr != "GEND")
-	{
-		for (unsigned int i = 0; i < indent; i++)
-			cout << "\t";
-		cout << instr;
-		if (instr != "GEND")
-		{
-			suc = ReadInt(f, inint);
-			
-			cout << ": len " << inint << endl;
-			
-			if (instr == "GHDR")
-			{
-				struct
-				{
-					int flags;
-					int paintFlags;
-					int materialRef;
-				} ghdr;
-				
-				int bread = fread (&ghdr, 1, sizeof(ghdr), f);
-				if (bread != sizeof(ghdr))
-				{
-					suc = false;
-				}
-				
-				indent++;
-				INDENTPRINT("Material index " << ghdr.materialRef);
-				models[objid].textureid[0] = ghdr.materialRef;
-				indent--;
-			}
-			else if (instr == "BRST")
-			{
-				int bursts;
-				
-				suc = ReadInt(f, bursts);
-				
-				if (suc)
-				{
-					indent++;
-					INDENTPRINT("Bursts: " << bursts);
-					
-					for (unsigned int b = 0; b < (unsigned int) bursts; b++)
-					{
-						int bin;
-						suc = ReadInt(f, bin);
-						INDENTPRINT("Start: " << bin);
-					}
-					for (unsigned int b = 0; b < (unsigned int) bursts; b++)
-					{
-						int bin;
-						suc = ReadInt(f, bin);
-						INDENTPRINT("Count: " << bin);
-					}
-					for (unsigned int b = 0; b < (unsigned int) bursts; b++)
-					{
-						int bin;
-						suc = ReadInt(f, bin);
-						INDENTPRINT("MtlID: " << bin);
-					}
-					for (unsigned int b = 0; b < (unsigned int) bursts; b++)
-					{
-						int bin;
-						suc = ReadInt(f, bin);
-						INDENTPRINT("VperP: " << bin);
-					}
-					indent--;
-				}
-				
-				/*struct
-				{
-					int burstStart[bursts]; //(start in vertex[] for the first burst vertex)
-					int burstCount[bursts]; //(number of floats in vertex[] to use for this burst)
-					int burstMtlID[bursts]; //(material selection for this burst)
-					int burstVperP[bursts]; //(should always be 3 for all bursts)
-				} brst;
-				
-				int bread = fread (&brst, 1, sizeof(brst), f);
-				if (bread != sizeof(brst))
-				{
-					suc = false;
-				}
-				
-				indent++;
-				INDENTPRINT("Bursts: " << brst.bursts);
-				INDENTPRINT("BurstStart: " << brst.burstStart[0]);
-				INDENTPRINT("BurstCount: " << brst.burstCount[0]);
-				INDENTPRINT("BurstMtlID: " << brst.burstMtlID[0]);
-				INDENTPRINT("BurstVperP: " << brst.burstVperP[0]);
-				indent--;*/
-			}
-			else if (instr == "INDI")
-			{
-				indent++;
-				
-				int indices;
-				suc = ReadInt(f, indices);
-				if (suc)
-				{
-					if (indices > 32000)
-					{
-						INDENTPRINT("Warning: too many faces for JOE format: " << indices);
-					}
-					
-					short index[indices];
-					INDENTPRINT("Faces: " << indices/3.0);
-					int bread = fread (index, 1, indices*sizeof(short), f);
-					if ((unsigned int) bread != sizeof(short)*indices)
-					{
-						suc = false;
-					}
-					else
-					{
-						if (models[objid].pObject != NULL)
-						{	
-							INDENTPRINT("Error in file: double INDI declaration");
-						}
-						
-						//create the object
-						models[objid].pObject = new JOEObject;
-						
-						//set headers
-						models[objid].pObject->info.magic = 0;
-						models[objid].pObject->info.version = 3;
-						models[objid].pObject->info.num_faces = indices/3;
-						models[objid].pObject->info.num_frames = 1;
-						models[objid].pObject->frames = new JOEFrame [1];
-						
-						models[objid].pObject->frames[0].num_verts = 0;
-						models[objid].pObject->frames[0].num_texcoords = 0;
-						models[objid].pObject->frames[0].num_normals = 0;
-						
-						models[objid].pObject->frames[0].faces = new JOEFace [models[objid].pObject->info.num_faces];
-						
-						for (unsigned int idx = 0; idx < (unsigned int) models[objid].pObject->info.num_faces; idx++)
-						{
-							VERBOSEPRINT(index[idx*3+0] << "," << index[idx*3+1] << "," << index[idx*3+2]);
-							for (unsigned int n = 0; n < 3; n++)
-							{
-								models[objid].pObject->frames[0].faces[idx].vertexIndex[n] = index[idx*3+n];
-								models[objid].pObject->frames[0].faces[idx].normalIndex[n] = index[idx*3+n];
-								models[objid].pObject->frames[0].faces[idx].textureIndex[n] = index[idx*3+n];
-							}
-						}
-					}
-				}
-				
-				indent--;
-			}
-			else if (instr == "VERT")
-			{
-				indent++;
-				
-				int num;
-				suc = ReadInt(f, num);
-				if (suc)
-				{
-					float array[num*3];
-					INDENTPRINT("Num: " << num);
-					int bread = fread (array, 1, num*3*sizeof(float), f);
-					if ((unsigned int) bread != num*3*sizeof(float))
-					{
-						suc = false;
-					}
-					else
-					{
-						models[objid].pObject->frames[0].num_verts = num;
-						models[objid].pObject->frames[0].num_normals = num;
-						models[objid].pObject->frames[0].num_texcoords = num;
-						
-						models[objid].pObject->frames[0].verts = new JOEVertex [models[objid].pObject->frames[0].num_verts];
-						models[objid].pObject->frames[0].normals = new JOEVertex [models[objid].pObject->frames[0].num_verts];
-						models[objid].pObject->frames[0].texcoords = new JOETexCoord [models[objid].pObject->frames[0].num_verts];
-						
-						models[objid].goodnorms = false;
-						
-						for (unsigned int idx = 0; idx < (unsigned int) models[objid].pObject->frames[0].num_verts; idx++)
-						{
-							/*for (unsigned int n = 0; n < 3; n++)
-							{
-								models[objid].pObject->frames[0].verts[idx].vertex[n] = array[idx*3+n];
-							}*/
-							
-							/*pObject->frames[i].verts[v].vertex[0] = temp.y;
-							pObject->frames[i].verts[v].vertex[1] = temp.z;
-							pObject->frames[i].verts[v].vertex[2] = -temp.x;*/
-							
-							VERBOSEPRINT(array[idx*3+0] << "," << array[idx*3+1] << "," << array[idx*3+2]);
-							
-							models[objid].pObject->frames[0].verts[idx].vertex[0] = array[idx*3+0];
-							models[objid].pObject->frames[0].verts[idx].vertex[1] = -array[idx*3+2];
-							models[objid].pObject->frames[0].verts[idx].vertex[2] = array[idx*3+1];
-							
-							//assign defaults for tex coords
-							models[objid].pObject->frames[0].texcoords[idx].u = 0;
-							models[objid].pObject->frames[0].texcoords[idx].v = 0;
-							
-							//assign defaults for normals
-							models[objid].pObject->frames[0].normals[idx].vertex[0] = 0;
-							models[objid].pObject->frames[0].normals[idx].vertex[1] = 1;
-							models[objid].pObject->frames[0].normals[idx].vertex[2] = 0;
-						}
-					}
-				}
-				
-				indent--;
-			}
-			else if (instr == "NORM")
-			{
-				indent++;
-				
-				int num;
-				suc = ReadInt(f, num);
-				if (suc)
-				{
-					float array[num*3];
-					INDENTPRINT("Num: " << num);
-					int bread = fread (array, 1, num*3*sizeof(float), f);
-					if ((unsigned int) bread != num*3*sizeof(float))
-					{
-						suc = false;
-					}
-					else
-					{
-						models[objid].goodnorms = true;
-						
-						for (unsigned int idx = 0; idx < (unsigned int) models[objid].pObject->frames[0].num_normals; idx++)
-						{
-							for (unsigned int n = 0; n < 3; n++)
-							{
-								models[objid].pObject->frames[0].normals[idx].vertex[n] = array[idx*3+n];
-							}
-						}
-					}
-				}
-				
-				indent--;
-			}
-			else if (instr == "VCOL")
-			{
-				indent++;
-				
-				int num;
-				suc = ReadInt(f, num);
-				if (suc)
-				{
-					float array[num*3];
-					INDENTPRINT("Num: " << num);
-					int bread = fread (array, 1, num*3*sizeof(float), f);
-					if ((unsigned int) bread != num*3*sizeof(float))
-					{
-						suc = false;
-					}
-					else
-					{
-						for (unsigned int idx = 0; idx < (unsigned int) num; idx++)
-						{
-							//INDENTPRINT(array[idx*3+0] << "," << array[idx*3+1] << "," << array[idx*3+2]);
-						}
-					}
-				}
-				
-				indent--;
-			}
-			else if (instr == "TVER")
-			{
-				indent++;
-				
-				int num;
-				suc = ReadInt(f, num);
-				if (suc)
-				{
-					float array[num*2];
-					INDENTPRINT("Num: " << num);
-					int bread = fread (array, 1, num*2*sizeof(float), f);
-					if ((unsigned int) bread != num*2*sizeof(float))
-					{
-						suc = false;
-					}
-					else
-					{
-						for (unsigned int idx = 0; idx < (unsigned int) models[objid].pObject->frames[0].num_texcoords; idx++)
-						{
-							models[objid].pObject->frames[0].texcoords[idx].u = array[idx*2+0];
-							models[objid].pObject->frames[0].texcoords[idx].v = 1.0-array[idx*2+1];
-						}
-					}
-				}
-				
-				indent--;
-			}
-			else
-			{
-				for (unsigned int i = 0; i < indent+1; i++)
-					cout << "\t";
-				cout << "skipping chunk" << endl;;
-				suc = ReadString(f, inint, instr);
-			}
-		}
-		
-		if (!suc)
-		{
-			for (unsigned int i = 0; i < indent; i++)
-				cout << "\t";
-			cout << "read error" << endl;
-		}
-		
-		suc = ReadString(f, 4, instr);
-	}
-	
-	if (!suc)
-	{
-		for (unsigned int i = 0; i < indent; i++)
-			cout << "\t";
-		cout << "read error" << endl;
-	}
-	
-	return true;
-}
-
-bool ReadGEOB(FILE * f, int chunklen)
-{
-	string instr;
-	int inint;
-	bool suc = true;
-	
-	suc = ReadInt(f, inint);
-	if (!suc)
-	{
-		for (unsigned int i = 0; i < indent; i++)
-			cout << "\t";
-		cout << "read error" << endl;
-		return false;
-	}
-	
-	for (unsigned int i = 0; i < indent; i++)
-		cout << "\t";
-	cout << inint << " object(s)" << endl;
-	
-	unsigned int numobj = inint;
-
-	models.resize(numobj);
-	
-	for (unsigned int o = 0; o < numobj; o++)
-	{
-		suc = ReadString(f, 4, instr);
-		if (suc && ReadInt(f, inint))
-		{
-			for (unsigned int i = 0; i < indent; i++)
-				cout << "\t";
-			cout << instr << ": len " << inint << endl;
-			
-			indent++;
-			
-			//suc = ReadString(f, inint, instr);
-			suc = ReadGOB1(f, inint, o);
-			
-			if (!suc)
-			{
-				for (unsigned int i = 0; i < indent; i++)
-					cout << "\t";
-				cout << "read error" << endl;
-				indent--;
-				return false;
-			}
-			
-			indent--;
-		}
-		else
-		{
-			for (unsigned int i = 0; i < indent; i++)
-				cout << "\t";
-			cout << "read error" << endl;
-			return false;
-		}
-	}
-	
-	return true;
-}
-
-bool ReadMATS(FILE * f, int chunklen)
-{
-	string instr;
-	int inint;
-	bool suc = true;
-	
-	suc = ReadInt(f, inint);
-	if (!suc)
-	{
-		for (unsigned int i = 0; i < indent; i++)
-			cout << "\t";
-		cout << "read error" << endl;
-		return false;
-	}
-	
-	for (unsigned int i = 0; i < indent; i++)
-		cout << "\t";
-	cout << inint << " material(s)" << endl;
-	
-	unsigned int nummat = inint;
-
-	for (unsigned int m = 0; m < nummat; m++)
-	{
-		suc = ReadString(f, 4, instr);
-		if (suc && ReadInt(f, inint))
-		{
-			for (unsigned int i = 0; i < indent; i++)
-				cout << "\t";
-			cout << instr << ": len " << inint << endl;
-			
-			indent++;
-			
-			suc = ReadMAT0(f, inint, m);
-			if (!suc)
-			{
-				for (unsigned int i = 0; i < indent; i++)
-					cout << "\t";
-				cout << "read error" << endl;
-				indent--;
-				return false;
-			}
-			
-			indent--;
-		}
-		else
-		{
-			for (unsigned int i = 0; i < indent; i++)
-				cout << "\t";
-			cout << "read error" << endl;
-			return false;
-		}
-	}
-	
-	return true;
-}
-
-bool LoadDOF(string filename)
-{
-	indent = 0;
-	
-	FILE * f = fopen (filename.c_str(), "rb");
-	if (f == NULL)
-	{
-		cout << "Can't open file \"" << filename << "\"" << endl;
-		return false;
-	}
-	
-	cout << "Loading \"" << filename << "\"" << endl;
-	
-	string instr;
-	
-	unsigned int filepos = 0;
-	
-	if (ReadString(f, 4, instr))
-	{
-		filepos += 4;
-		
-		if (instr == "DOF1")
-		{
-			int dofsize = 0;
-			if (ReadInt(f, dofsize))
-			{
-				cout << "DOF1: len " << dofsize << endl;
-				indent++;
-				
-				filepos += 4;
-				
-				//start the file reading engine
-				int chunklen;
-				bool readsuccess = ReadString(f, 4, instr);
-				if (!(readsuccess && ReadInt(f, chunklen)))
-				{
-					readsuccess = false;
-				}
-				else
-					filepos += 8;
-				while (filepos < (unsigned int) dofsize && readsuccess && instr != "EDOF")
-				{
-					for (unsigned int i = 0; i < indent; i++)
-						cout << "\t";
-					cout << instr << ": len " << chunklen << endl;
-					
-					indent++;
-					
-					if (instr == "MATS")
-					{
-						readsuccess = ReadMATS(f, chunklen);
-						filepos += chunklen;
-					}
-					else if (instr == "GEOB")
-					{
-						readsuccess = ReadGEOB(f, chunklen);
-						filepos += chunklen;
-					}
-					else
-					{
-						for (unsigned int i = 0; i < indent; i++)
-							cout << "\t";
-						cout << "skipping chunk" << endl;
-						ReadString(f, chunklen, instr);
-						filepos += chunklen;
-					}
-					
-					indent--;
-					
-					readsuccess = ReadString(f, 4, instr);
-					if (!(readsuccess && ReadInt(f, chunklen)))
-					{
-						readsuccess = false;
-					}
-					else
-						filepos += 8;
-				}
-				
-				if (!readsuccess && instr != "EDOF")
-				{
-					for (unsigned int i = 0; i < indent; i++)
-						cout << "\t";
-					cout << "EOF" << endl;
-					fclose(f);
-					return false;
-				}
-				
-				if (instr == "EDOF")
-				{
-					for (unsigned int i = 0; i < indent; i++)
-						cout << "\t";
-					cout << "Successfully got to end of DOF." << endl;
-					fclose(f);
-					return true;
-				}
-			}
-			else {cout << "EOF" << endl;fclose(f);return false;}
-		}
-		else {cout << "not a DOF file" << endl;fclose(f);return false;}
-	}
-	else {cout << "EOF" << endl;fclose(f);return false;}
-	
-	fclose(f);
-	
-	return true;
-}
-
-void GenerateNormals(JOEMODEL & obj)
-{
-	//for now, I use a naive one normal per face 
-	// normal generation approach (flat shading)
-	
-	if (obj.pObject != NULL)
-	{
-		for (int idx = 0; idx < obj.pObject->info.num_frames; idx++)
-		{
-			//clear out old normals
-			delete [] obj.pObject->frames[idx].normals;
-			
-			//generate new memory
-			obj.pObject->frames[idx].num_normals = obj.pObject->info.num_faces;
-			obj.pObject->frames[idx].normals = new JOEVertex [obj.pObject->info.num_faces];
-			
-			for (int f = 0; f < obj.pObject->info.num_faces; f++)
-			{
-				//get verts
-				VERTEX vert[3];
-				for (int v = 0; v < 3; v++)
-				{
-					int vnum = obj.pObject->frames[idx].faces[f].vertexIndex[v];
-					vert[v].Set(obj.pObject->frames[idx].verts[vnum].vertex);
-					
-					//flip axes around
-					float tval = vert[v].x;
-					vert[v].x = vert[v].y;
-					vert[v].y = vert[v].z;
-					vert[v].z = -tval;
-				}
-				
-				//generate normal
-				VERTEX normal;
-				normal = (vert[2] - vert[0]).cross(vert[1] - vert[0]);
-				normal = normal.normalize();
-				
-				//normal.DebugPrint();
-				
-				//set the normal
-				obj.pObject->frames[idx].normals[f].vertex[0] = normal.x;
-				obj.pObject->frames[idx].normals[f].vertex[1] = normal.y;
-				obj.pObject->frames[idx].normals[f].vertex[2] = normal.z;
-				
-				//set all normal indices to correspond to the new normal index
-				for (int v = 0; v < 3; v++)
-					obj.pObject->frames[idx].faces[f].normalIndex[v] = f;
-			}
-		}
-	}
-}
-
-void WriteObject(string filename, JOEMODEL & obj)
-{
-	if (obj.goodnorms == false)
-	{
-		GenerateNormals(obj);
-	}
-	
-	FILE * f = fopen (filename.c_str(), "wb");
-	
-	if (f == NULL)
-	{
-		ERRORPRINT("Can't open \"" << filename << "\" for writing");
-	}
-	
-	if (obj.pObject != NULL)
-	{
-		fwrite(&(obj.pObject->info), sizeof(JOEHeader), 1, f);
-		
-		for (int idx = 0; idx < obj.pObject->info.num_frames; idx++)
-		{
-			fwrite(obj.pObject->frames[idx].faces, sizeof(JOEFace), obj.pObject->info.num_faces, f);
-			
-			fwrite(&(obj.pObject->frames[idx].num_verts), sizeof(int), 1, f);
-			fwrite(&(obj.pObject->frames[idx].num_texcoords), sizeof(int), 1, f);
-			fwrite(&(obj.pObject->frames[idx].num_normals), sizeof(int), 1, f);
-			
-			for (int n = 0; n < obj.pObject->frames[idx].num_verts; n++)
-			{
-				VERBOSEPRINT(obj.pObject->frames[idx].verts[n].vertex[0] << "," << obj.pObject->frames[idx].verts[n].vertex[1] << "," << obj.pObject->frames[idx].verts[n].vertex[2]);
-			}
-			
-			fwrite((obj.pObject->frames[idx].verts), sizeof(JOEVertex), obj.pObject->frames[idx].num_verts, f);
-			fwrite((obj.pObject->frames[idx].normals), sizeof(JOEVertex), obj.pObject->frames[idx].num_normals, f);
-			fwrite((obj.pObject->frames[idx].texcoords), sizeof(JOETexCoord), obj.pObject->frames[idx].num_texcoords, f);
-		}
+		ff >> numformat;
+		cout << "Using " << numformat << " parameters per entry." << endl;
+		ff.close();
 	}
 	else
 	{
-		ERRORPRINT("Object is NULL");
+		cout << "Using default " << numformat << " parameters per entry." << endl;
 	}
 	
-	fclose(f);
+	ifstream lf;
+	lf.open(filename.c_str());
+	if (lf)
+	{
+		string param;
+		while (!lf.eof() && param != "!!!EOF!!!")
+		{
+			struct listentry newentry;
+						
+			for (int i = 0; i < numformat; i++)
+			{
+				param = sGetParam(lf);
+				newentry.entries.push_back(param);
+			}
+			
+			if (param != "!!!EOF!!!" && !lf.eof())
+				listfile.push_back(newentry);
+		}
+		
+		cout << "Read " << listfile.size() << " entries." << endl;
+	}
+	else
+	{
+		cout << "Can't find " << filename << endl;
+	}
 }
 
-void WriteObjects(string filename, string outpath, string inpath)
-{
-	cout << endl;
-	
-	char buffer[1024];
-	
-	for (unsigned int o = 0; o < models.size(); o++)
+void WriteListFile(string filename)
+{	
+	/*int numformat = 10;
+	ifstream ff("listformat.txt");
+	if (ff)
 	{
-		if (textures[models[o].textureid[0]].empty())
+		ff >> numformat;
+		cout << "Using " << numformat << " parameters per entry." << endl;
+		ff.close();
+	}
+	else
+	{
+		cout << "Using default " << numformat << " parameters per entry." << endl;
+	}*/
+	
+	ofstream lf;
+	lf.open(filename.c_str());
+	if (lf)
+	{
+		lf << "# File generated by listedit, a VDrift track editor tool" << endl << endl;
+		
+		int count = 0;
+		
+		for (list <listentry>::iterator i = listfile.begin(); i != listfile.end(); i++)
 		{
-			INDENTPRINT("Warning: Object " << o << " has no texture");
+			lf << "#entry " << count << endl;
+			for (list <string>::iterator n = i->entries.begin(); n != i->entries.end(); n++)
+			{
+				lf << *n << endl;
+			}
+			
+			lf << endl;
+			count++;
+		}
+		
+		cout << "Wrote " << listfile.size() << " entries." << endl;
+	}
+	else
+	{
+		cout << "Can't open " << filename << " for writing" << endl;
+	}
+}
+
+void trim(string & istr)
+{
+	//trim the string
+	istr.erase(0, istr.find_first_not_of(" \t\n"));
+
+	try
+	{
+		istr.erase(istr.find_last_not_of(" \t\n") + 1);
+	}
+	catch(std::out_of_range)
+	{
+		
+	}
+}
+
+void go(string com, string arg)
+{
+	if (com == "help")
+	{
+		vector <string>::iterator i;
+		for (i = commandlist.begin(); i != commandlist.end(); i++)
+		{
+			cout << *i << endl;
+		}
+	}
+	/*else if (com == "mem")
+	{
+		cout << "mem used: " << db.MemoryFootPrint(false, true) << " bytes data, " << 
+			db.MemoryFootPrint(true, true) << " bytes total" << endl;
+	}*/
+	else if (com == "load")
+	{
+		if (arg.empty())
+		{
+			arg = "list.txt";
+		}
+		
+		ReadListFile(arg);
+	}/*
+	else if (com == "merge")
+	{
+		if (arg.empty())
+		{
+			arg = "in.txt";
+		}
+		
+		db.ReadPartialASCII(arg.c_str());	
+	}*/
+	else if (com == "save")
+	{
+		if (arg.empty())
+		{
+			arg = "listout.txt";
+		}
+		
+		WriteListFile(arg);
+	}/*
+	else if (com == "test")
+	{
+		cout << "\"" << com << "\",\"" << arg << "\"" << endl;
+	}
+	else if (com == "cat")
+	{
+		NODE * cur = curnode;
+		if (!arg.empty())
+		{
+			cur = curnode->GetChild(arg);
+		}
+		
+		//cout << cur->DebugPrint() << endl;
+		if (cur != NULL)
+			cur->DebugPrint();
+	}*/
+	else if (com == "ls" || com == "no")
+	{
+		stringstream argstream;
+		argstream.str(arg);
+		int matchentry = 0;
+		string pattern = "*";
+		if (!arg.empty())
+		{
+			argstream >> matchentry;
+			argstream >> pattern;
+		}
+		
+		if (pattern == "")
+			pattern = "*";
+		
+		for (list <listentry>::iterator i = listfile.begin(); i != listfile.end(); i++)
+		{
+			int count = 0;
+			bool match = false;
+			for (list <string>::iterator n = i->entries.begin(); n != i->entries.end(); n++)
+			{
+				if (count == matchentry)
+				{
+					if (Matches(pattern, *n))
+						match = true;
+				}
+				count++;
+			}
+			
+			if (match)
+			{
+				count = 0;
+				for (list <string>::iterator n = i->entries.begin(); n != i->entries.end(); n++)
+				{
+					if (count == 0)
+					{
+						cout << *n << endl;
+					}
+					count++;
+				}
+			}
+		}
+	}
+	else if (com == "set")
+	{
+		stringstream argstream;
+		argstream.str(arg);
+		int matchentry = 0;
+		string pattern = "*";
+		int setnum = 0;
+		string setvalue;
+		if (!arg.empty())
+		{
+			argstream >> matchentry;
+			argstream >> pattern;
+			argstream >> setnum;
+			argstream >> setvalue;
+		}
+		
+		if (pattern == "")
+			pattern = "*";
+		
+		if (setvalue.empty())
+		{
+			cout << "Empty set value." << endl;
 		}
 		else
 		{
-			INDENTPRINT("Object " << o << ": Texture \"" << textures[models[o].textureid[0]] << "\"");
+			int num_set = 0;
+			for (list <listentry>::iterator i = listfile.begin(); i != listfile.end(); i++)
+			{
+				int count = 0;
+				bool match = false;
+				for (list <string>::iterator n = i->entries.begin(); n != i->entries.end(); n++)
+				{
+					if (count == matchentry)
+					{
+						if (Matches(pattern, *n))
+							match = true;
+					}
+					count++;
+				}
+				
+				if (match)
+				{
+					count = 0;
+					for (list <string>::iterator n = i->entries.begin(); n != i->entries.end(); n++)
+					{
+						if (count == setnum)
+						{
+							*n = setvalue;
+							num_set++;
+						}
+						count++;
+					}
+				}
+			}
 			
-			sprintf(buffer, "nconvert -out png -o %s/%s.png %s/%s", 
-				outpath.c_str(), textures[models[o].textureid[0]].c_str(), inpath.c_str(),
-				textures[models[o].textureid[0]].c_str());
-			indent++;
-			INDENTPRINT("Running \"" << buffer << "\"" << endl);
-			system(buffer);
-			indent--;
+			cout << "Set " << num_set << " entries." << endl;
+		}
+	}
+	/*else if (com == "info")
+	{
+		curnode->DebugPrint();
+	}
+	else if (com == "cleardata")
+	{
+		NODE * cur = curnode;
+		if (!arg.empty())
+		{
+			cur = curnode->GetChild(arg);
 		}
 		
-		indent++;
-		sprintf(buffer, "%s/%s-%02d.joe", outpath.c_str(), filename.c_str(), o);
-		
-		if (outpath != ".")
+		if (cur == NULL)
+			cout << "Child not found: " << arg << endl;
+		else
+		{		
+			cur->data_str.clear();
+			cur->data_dbl.clear();
+			cur->data_ptr.clear();
+		}
+	}
+	else if (com == "cleardata")
+	{
+		NODE * cur = curnode;
+		if (!arg.empty())
 		{
-			//append to list.txt
-			string listfile = outpath + "/list.txt";
-			ofstream lf;
-			lf.open(listfile.c_str(), ofstream::out | ofstream::app);
-			if (lf)
+			cur = curnode->GetChild(arg);
+		}
+		
+		if (cur == NULL)
+			cout << "Child not found: " << arg << endl;
+		else
+		{		
+			cur->ClearListData();
+		}
+	}
+	else if (com == "set" || com == "set-s" || com == "set-d")
+	{
+		NODE * cur = curnode;
+		if (!arg.empty())
+		{
+			cur = curnode->GetChild(arg);
+		}
+		
+		cout << "input data: ";
+		string newdata;
+		char buffer[1024];
+		cin.getline(buffer, 1024);
+		newdata = buffer;
+		trim(newdata);
+		
+		if (cur == NULL)
+		{
+			//curnode->AddChild(arg, newdata);
+			cout << "Child not found: " << arg << endl;
+		}
+		else
+		{
+			//cur->data.Set(newdata);
+			if (com == "set" || com == "set-s")
 			{
-				lf << endl << "#added by dof2joe" << endl;
-				char buffer[1024];
-				sprintf(buffer, "%s-%02d.joe", filename.c_str(), o);
-				lf << buffer << endl;
-				sprintf(buffer, "%s.png", textures[models[o].textureid[0]].c_str());
-				lf << buffer << endl;
-				lf << "1 0 0\n0 0 0\n0\n0" << endl;
-				
-				lf.close();
+				cur->SetSingleString(newdata);
+			}
+			else if (com == "set-d")
+			{
+				double tdbl = atof(newdata.c_str());
+				cur->SetSingleDouble(tdbl);
 			}
 		}
+	}
+	else if (com == "nset" || com == "nset-s" || com == "nset-d")
+	{
+		char buffer[1024];
 		
-		WriteObject(buffer, models[o]);
-		indent--;
+		NODE * cur = curnode;
+		if (!arg.empty())
+		{
+			cur = curnode->GetChild(arg);
+		}
+		
+		if (cur == NULL)
+		{
+			//curnode->AddChild(arg, newdata);
+			cout << "Child not found: " << arg << endl;
+		}
+		else
+		{
+			unsigned int num;
+			cout << "input n: ";
+			cin.getline(buffer, 1024);
+			num = atoi(buffer);
+			
+			if (com == "nset" || com == "nset-s")
+				cur->data_str.clear();
+			else if (com == "nset-d")
+				cur->data_dbl.clear();
+			
+			for (unsigned int i = 0; i < num; i++)
+			{
+				cout << "input data " << i << ": ";
+				string newdata;
+				cin.getline(buffer, 1024);
+				newdata = buffer;
+				trim(newdata);
+				
+				if (com == "nset" || com == "nset-s")
+				{
+					cur->data_str.push_back(newdata);
+				}
+				else if (com == "nset-d")
+				{
+					double tdbl = atof(newdata.c_str());
+					cur->data_dbl.push_back(tdbl);
+				}
+			}
+		}
+	}
+	else if (com == "cd")
+	{
+		if (arg == "..")
+		{
+			if (curnode->data_parent != NULL)
+				curnode = curnode->data_parent;
+		}
+		else
+		{
+			if (!arg.empty())
+			{
+				NODE * newcur = curnode->GetChild(arg);
+				if (newcur != NULL)
+					curnode = newcur;
+			}
+		}
+	}
+	else if (com == "cdl")
+	{
+		if (arg == "..")
+		{
+			if (curnode->data_parent != NULL)
+				curnode = curnode->data_parent;
+		}
+		else
+		{
+			if (!arg.empty())
+			{
+				unsigned int wantcount = atoi(arg.c_str());
+				NODE * newcur = NULL;
+				unsigned int count = 0;
+				for (list < NODE * >::iterator i = curnode->data_list.begin(); i != curnode->data_list.end(); i++,count++)
+				{
+					if (count == wantcount)
+						newcur = *i;
+				}
+				
+				if (newcur != NULL)
+					curnode = newcur;
+			}
+		}
+	}*/
+	else if (com == "quit")
+	{
+		
+	}
+	else if (com == "abort")
+	{
+
+	}
+	else
+	{
+		cout << "unknown command: " << com << endl;
 	}
 }
 
-int main(int argc, char * argv[])
+int main(int argc, char *argv[])
 {
-	if (argc <= 1)
+	
+	if (argc > 1)
+		ReadListFile(argv[1]);
+	//else
+		//db.ReadPartialASCII("autosave.txt");
+	
+	string command = "";
+	
+	/*commandlist.push_back("mem - Memory usage info");*/
+	commandlist.push_back("ls - List entries");
+	/*commandlist.push_back("cd - Change directory");
+	commandlist.push_back("cdl - Change directory into list child");
+	commandlist.push_back("cat - Output contents of node");
+	commandlist.push_back("mkdir - Make a new node");
+	commandlist.push_back("rm - Recursively delete nodes");*/
+	commandlist.push_back("set - Set entries");
+	/*commandlist.push_back("set-s - Set a node to a string value");
+	commandlist.push_back("set-d - Set a node to a numeric value");
+	commandlist.push_back("nset - Identical to nset-s");
+	commandlist.push_back("nset-s - Set a node to n string values");
+	commandlist.push_back("nset-d - Set a node to n numeric values");
+	commandlist.push_back("cleardata - Clear a node's data");
+	commandlist.push_back("clearlist - Clear a node's list");
+	commandlist.push_back("cp - Copy a node");
+	commandlist.push_back("info - Some info about the current node");*/
+	commandlist.push_back("load - Read list file");
+	//commandlist.push_back("merge - Merge in ASCII file data");
+	commandlist.push_back("save - Write list file");
+	commandlist.push_back("quit");
+	
+	while (command != "quit" && command != "abort")
 	{
-		cout << "Usage: dof2joe [-p output object path] file1.dof file2.dof ..." << endl;
-		return 0;
-	}
-	
-	vector <string> args;
-	args.resize(argc);
-	for (unsigned int i = 0; i < (unsigned int) argc; i++)
-	{
-		args[i] = argv[i];
-	}
-	
-	unsigned int curarg = 1;
-	
-	string outpath = ".";
-	
-	if (args[curarg] == "-p")
-	{
-		curarg++;
-		outpath = args[curarg];
-		curarg++;
-	}
-	
-	for (unsigned int i = curarg; i < (unsigned int) argc; i++)
-	{
-		indent = 0;
-		textures.clear();
-		models.clear();
+		//string prompt = "> " + curnode->GetFullHandle();
+		string prompt = ">";
+		string input;
+		prompt.append(" $ ");
+		cout << endl << prompt;
+		char buffer[1024];
+		cin.getline(buffer, 1024);
+		input = buffer;
 		
-		LoadDOF(args[i]);
+		//trim the string
+		trim(input);
 		
-		string filename = args[i];
+		//parse the string
+		unsigned int tokloc = 0;
 		
-		string shortfn = filename;
-		unsigned int loc = shortfn.rfind("/",shortfn.length()-1);
-		if (loc + 1 < filename.length())
+		tokloc = input.find(' ', 0);
+		if (tokloc != 0)
 		{
-			shortfn = shortfn.substr(loc+1);
+			command = input.substr(0, tokloc);
 		}
 		
-		string inpath = ".";
-		if (loc + 1 < filename.length())
-		{
-			inpath = filename.substr(0,loc);
-		}
+		string arg = "";
+		if (tokloc < input.length())
+			arg = input.substr(tokloc+1);
 		
-		WriteObjects(shortfn, outpath, inpath);
+		trim(command);
+		trim(arg);
+		
+		go(command, arg);
 	}
+	
+	//db.WriteASCII("out.txt");
+	if (command != "abort")
+	{
+		if (argc > 1)
+			WriteListFile(argv[1]);
+		//WriteListFile("list-autosave.txt");
+	}
+	
+	listfile.clear();
 	
 	return 0;
 }

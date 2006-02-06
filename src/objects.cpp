@@ -331,7 +331,6 @@ bool OBJECTS::FindClosestVert(VERTEX orig, VERTEX dir, VERTEX &out)
 bool OBJECTS::AutoFindClosestVert(VERTEX orig, VERTEX dir, VERTEX &out)
 {
 	bool found = false;
-	float mindist = SELECT_AUTO_DISTANCE * 1000.0;
 	VERTEX relobjpos, tvert, rayproj;
 	int i;
 	float dotprod = 0;
@@ -339,14 +338,46 @@ bool OBJECTS::AutoFindClosestVert(VERTEX orig, VERTEX dir, VERTEX &out)
 	//dir = dir.normalize().ScaleR(MAX_SELECTION_DIST);
 	dir = dir.normalize();
 	
-	list <VERTEX *> candidates;
+	list <VERTEX> candidates;
 	
 	OBJECTNODE * curpos = object_list;
 	while (curpos != NULL)
 	{
 		relobjpos = curpos->pos - orig;
 		
-		for (i = 0; i < curpos->model->jmodel.GetVerts(0); i++)
+		for (i = 0; i < curpos->model->jmodel.GetFaces(); i++)
+		{
+			bool inface = false;
+			for (int n = 0; n < 3; n++)
+			{
+				short vi = curpos->model->jmodel.GetFaceArray(0)[i].vertexIndex[n];
+				VERTEX tvert;
+				tvert.Set(curpos->model->jmodel.GetVertArray(0)[vi].vertex);
+				//tvert.x = -tvert.x;
+				tvert.z = -tvert.z;
+				//tvert.DebugPrint();
+				//orig.DebugPrint();
+				if ((tvert - orig).len() < 0.00001)
+				{
+					inface = true;
+				}
+			}
+			
+			if (inface)
+			{
+				for (int n = 0; n < 3; n++)
+				{
+					short vi = curpos->model->jmodel.GetFaceArray(0)[i].vertexIndex[n];
+					VERTEX tvert;
+					tvert.Set(curpos->model->jmodel.GetVertArray(0)[vi].vertex);
+					tvert.z = -tvert.z;
+					tvert = tvert + curpos->pos;
+					candidates.push_back(tvert);
+				}
+			}
+		}
+		
+		/*for (i = 0; i < curpos->model->jmodel.GetVerts(0); i++)
 		{
 			tvert.Set(curpos->model->jmodel.GetVertArray(0)[i].vertex);
 			//float tf = tvert.x;
@@ -366,7 +397,7 @@ bool OBJECTS::AutoFindClosestVert(VERTEX orig, VERTEX dir, VERTEX &out)
 					found = true;
 				}
 			}
-		}
+		}*/
 		
 		/*cout << "Num verts: " << curpos->model->jmodel.GetVerts(0) << endl;
 		//relobjpos.DebugPrint();
@@ -375,6 +406,31 @@ bool OBJECTS::AutoFindClosestVert(VERTEX orig, VERTEX dir, VERTEX &out)
 		cout << tvert.dot(dir) << endl;*/
 		
 		curpos = curpos -> next;
+	}
+	
+	//cout << candidates.size() << endl;
+	float mindist = MAX_AUTO_SELECTION_DIST * 1000.0;
+	for (list <VERTEX>::iterator c = candidates.begin(); c != candidates.end(); c++)
+	{
+		//tvert.Set(*c);
+		tvert = *c;
+		//float tf = tvert.x;
+		//tvert.z = -tvert.z;
+		tvert = tvert - orig;
+		
+		if (tvert.len() < MAX_AUTO_SELECTION_DIST)
+		{
+			dotprod = tvert.dot(dir);
+			rayproj = dir.ScaleR(dotprod);
+			
+			if ((tvert - rayproj).len() < mindist && dotprod > 0 && (*c - orig).len() > 0.001)
+			{
+				mindist = (tvert - rayproj).len();
+				out = tvert + orig;
+				
+				found = true;
+			}
+		}
 	}
 	
 	return found;
