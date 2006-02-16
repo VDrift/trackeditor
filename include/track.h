@@ -26,6 +26,7 @@
 
 #include "bezier.h"
 #include "camera.h"
+#include "configfile.h"
 #include "globals.h"
 
 class BEZIERNODE
@@ -70,6 +71,7 @@ private:
 	ROADSTRIPNODE * roads;
 	int NumRoads();
 	VERTEX startloc;
+	QUATERNION startquat;
 	
 public:
 	TRACK();
@@ -83,6 +85,8 @@ public:
 	bool Collide(VERTEX origin, VERTEX direction, VERTEX &outtri, bool closest, ROADSTRIP * &collideroad);
 	void SetStart(VERTEX newloc) {startloc = newloc;}
 	VERTEX GetStart() {return startloc;}
+	void SetStartOrientation(QUATERNION newquat) {startquat = newquat;}
+	QUATERNION GetStartOrientation() {return startquat;}
 };
 
 #define _TRACK_H

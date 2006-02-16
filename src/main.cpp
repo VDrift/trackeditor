@@ -597,6 +597,7 @@ void handleKeyPress( SDL_keysym *keysym )
 		
 		case 'l':
 			track.SetStart(cam.position.ScaleR(-1));
+			track.SetStartOrientation(cam.dir.ReturnConjugate());
 			break;
 		
 		case 'r':

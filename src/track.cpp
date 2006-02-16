@@ -408,7 +408,18 @@ void TRACK::Write(string trackname)
 	trackfile.open((settings.GetDataDir() + "/tracks/" + trackname + "/roads.trk").c_str());
 	
 	VERTEX sl = GetStart();
-	trackfile << sl.x << " " << sl.y << " " << sl.z << endl << endl;
+	//trackfile << sl.x << " " << sl.y << " " << sl.z << endl << endl;
+	CONFIGFILE trackconfig;
+	trackconfig.Load((settings.GetDataDir() + "/tracks/" + trackname + "/track.txt").c_str());
+	trackconfig.SetParam("start position", sl.v3());
+	QUATERNION so = GetStartOrientation();
+	VERTEX sov;
+	sov.x = so.x;
+	sov.y = so.y;
+	sov.z = so.z;
+	trackconfig.SetParam("start orientation-xyz", sov.v3());
+	trackconfig.SetParam("start orientation-w", so.w);
+	trackconfig.Write();
 	
 	trackfile << NumRoads() << endl << endl;
 	
@@ -441,15 +452,24 @@ void TRACK::Load(string trackname)
 	ifstream trackfile;
 	trackfile.open((settings.GetDataDir() + "/tracks/" + trackname + "/roads.trk").c_str());
 	
-	int numroads, i;
-	
+	CONFIGFILE trackconfig;
+	trackconfig.Load((settings.GetDataDir() + "/tracks/" + trackname + "/track.txt").c_str());
+	float tvert[3];
 	VERTEX sl;
-	
-	trackfile >> sl.x;
-	trackfile >> sl.y;
-	trackfile >> sl.z;
-	
+	trackconfig.GetParam("start position", tvert);
+	sl.Set(tvert);
 	SetStart(sl);
+	VERTEX sov;
+	trackconfig.GetParam("start orientation-xyz", tvert);
+	sov.Set(tvert);
+	QUATERNION so;
+	so.x = sov.x;
+	so.y = sov.y;
+	so.z = sov.z;
+	trackconfig.GetParam("start orientation-w", so.w);
+	SetStartOrientation(so);
+	
+	int numroads, i;
 	
 	if (trackfile)
 	{
