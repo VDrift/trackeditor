@@ -1,0 +1,5 @@
+env = Environment(CPPPATH='include')
+#env.Append(LIBS = ['GL', 'GLU', 'SDL_image'])
+list = Split("""src/main.cpp
+		src/joepack.cpp""")
+env.Program('joepack', list)
