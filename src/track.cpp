@@ -419,6 +419,7 @@ void TRACK::Write(string trackname)
 	sov.z = so.z;
 	trackconfig.SetParam("start orientation-xyz", sov.v3());
 	trackconfig.SetParam("start orientation-w", so.w);
+	trackconfig.SetParam("cull faces", "yes");
 	trackconfig.Write();
 	
 	trackfile << NumRoads() << endl << endl;
