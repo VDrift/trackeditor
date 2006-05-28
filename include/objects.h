@@ -20,6 +20,8 @@
 #include "model.h"
 #include "globals.h"
 
+#include <map>
+
 #define SELECT_DISTANCE 1.0
 #define MAX_SELECTION_DIST 1000.0
 
@@ -33,6 +35,7 @@ public:
 	JOEMODEL jmodel;
 	string name;
 	OBJECTMODEL * next;
+	bool fullbright;
 };
 
 class OBJECTNODE
@@ -58,7 +61,9 @@ private:
 
 	void DrawObject(OBJECTNODE * object);
 
-	OBJECTMODEL * AddModel(string modelname);
+	OBJECTMODEL * AddModel(string modelname, string texname, bool mip, bool fullbright, bool skybox);
+
+	map <string, GLuint> texture_db;
 
 	string path;
 	
@@ -66,7 +71,7 @@ public:
 	OBJECTS();
 	~OBJECTS();
 	void Draw();
-	void Add(VERTEX pos, float rotation, string modelname);
+	void Add(VERTEX pos, float rotation, string modelname, string texname, bool mip, bool fullbright, bool skybox, bool drv, bool col);
 	void DeleteAll();
 
 	bool FindClosestVert(VERTEX orig, VERTEX dir, VERTEX &out);

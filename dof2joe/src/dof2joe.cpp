@@ -19,6 +19,15 @@ bool verbose = false;
 #define INDENTPRINT(str) {for (unsigned int i = 0; i < indent; i++) cout << "\t"; cout << str << endl;}
 #define ERRORPRINT(str) {for (unsigned int i = 0; i < indent; i++) cout << "\t"; cerr << "Error: " << str << endl;}
 
+string StringToLower(string strToConvert)
+{//change each element of the string to lower case
+   for(unsigned int i=0;i<strToConvert.length();i++)
+   {
+      strToConvert[i] = tolower(strToConvert[i]);
+   }
+   return strToConvert;//return the converted string
+}
+
 bool ReadString(FILE * f, unsigned int btoread, string & outstr)
 {
 	unsigned int bread;
@@ -879,23 +888,32 @@ void WriteObject(string filename, JOEMODEL & obj)
 
 void WriteObjects(string filename, string outpath, string inpath)
 {
+	bool lcaseinput = true;
+	
 	cout << endl;
 	
 	char buffer[1024];
 	
 	for (unsigned int o = 0; o < models.size(); o++)
 	{
-		if (textures[models[o].textureid[0]].empty())
+		filename = StringToLower(filename);
+		string texname = StringToLower(textures[models[o].textureid[0]]);
+		if (texname.empty())
 		{
 			INDENTPRINT("Warning: Object " << o << " has no texture");
 		}
 		else
 		{
-			INDENTPRINT("Object " << o << ": Texture \"" << textures[models[o].textureid[0]] << "\"");
+			INDENTPRINT("Object " << o << ": Texture \"" << texname << "\"");
 			
-			sprintf(buffer, "nconvert -out png -o %s/%s.png %s/%s", 
-				outpath.c_str(), textures[models[o].textureid[0]].c_str(), inpath.c_str(),
-				textures[models[o].textureid[0]].c_str());
+			if (!lcaseinput)
+				sprintf(buffer, "nconvert -out png -o %s/%s.png %s/%s", 
+					outpath.c_str(), texname.c_str(), inpath.c_str(),
+					textures[models[o].textureid[0]].c_str());
+			else
+				sprintf(buffer, "nconvert -out png -o %s/%s.png %s/%s", 
+					outpath.c_str(), texname.c_str(), inpath.c_str(),
+					texname.c_str());
 			indent++;
 			INDENTPRINT("Running \"" << buffer << "\"" << endl);
 			system(buffer);
@@ -917,7 +935,7 @@ void WriteObjects(string filename, string outpath, string inpath)
 				char buffer[1024];
 				sprintf(buffer, "%s-%02d.joe", filename.c_str(), o);
 				lf << buffer << endl;
-				sprintf(buffer, "%s.png", textures[models[o].textureid[0]].c_str());
+				sprintf(buffer, "%s.png", texname.c_str());
 				lf << buffer << endl;
 				lf << "1 0 0\n0 0 0\n0\n0" << endl;
 				

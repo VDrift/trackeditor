@@ -119,6 +119,15 @@ void Unpack(string fn, JOEPACK & pack)
 	}
 }
 
+string GetPathFromFilename(string filename)
+{
+	unsigned int pos = filename.find_last_of("/\\");
+	if (pos < filename.length())
+		return filename.substr(0,pos);
+	else
+		return "";
+}
+
 int main(int argc, char * argv[])
 {
 	if (argc <= 2)
@@ -126,6 +135,8 @@ int main(int argc, char * argv[])
 		PrintUsage();
 		return 0;
 	}
+	
+	//cout << GetPathFromFilename(argv[1]) << endl;
 	
 	vector <string> args;
 	args.resize(argc);

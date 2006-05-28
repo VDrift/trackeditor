@@ -18,6 +18,13 @@ OBJECTS::~OBJECTS()
 
 void OBJECTS::DeleteAll()
 {
+	for (map <string, GLuint>::iterator i = texture_db.begin(); i != texture_db.end(); i++)
+	{
+		glDeleteTextures(1, &(i->second));
+	}
+	
+	texture_db.clear();
+	
 	while (object_list != NULL)
 		delobject();
 	
@@ -100,7 +107,12 @@ void OBJECTS::DrawObject(OBJECTNODE * object)
 	
 	if (object->model != NULL)
 	{
-		glPushAttrib(GL_ALL_ATTRIB_BITS);
+		if (object->model->fullbright)
+			glDisable(GL_LIGHTING);
+		else
+			glEnable(GL_LIGHTING);
+		
+		//glPushAttrib(GL_ALL_ATTRIB_BITS);
 		glEnable(GL_BLEND);
 		//glDisable(GL_DEPTH_TEST);
 		glAlphaFunc(GL_GREATER, 0.9f);
@@ -137,7 +149,7 @@ void OBJECTS::DrawObject(OBJECTNODE * object)
 		glEnable(GL_DEPTH_TEST);
 		glColor4f(1,1,1,1);
 		
-		glPopAttrib();
+		//glPopAttrib();
 	}
 	else
 		cout << "NULL model" << endl;
@@ -157,6 +169,8 @@ void OBJECTS::Draw()
 	glEnable(GL_ALPHA_TEST);
 	glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );*/
 	//glBlendFunc( GL_ONE, GL_ONE );
+	
+	glPushAttrib(GL_ALL_ATTRIB_BITS);
 		
 	OBJECTNODE * curpos = object_list;
 	while (curpos != NULL)
@@ -164,6 +178,8 @@ void OBJECTS::Draw()
 		DrawObject(curpos);
 		curpos = curpos -> next;
 	}
+	
+	glPopAttrib();
 
 	
 	//reset gl flags
@@ -174,7 +190,7 @@ void OBJECTS::Draw()
 	glDisable(GL_ALPHA_TEST);*/
 }
 
-void OBJECTS::Add(VERTEX pos, float rotation, string modelname)
+void OBJECTS::Add(VERTEX pos, float rotation, string modelname, string texname, bool mip, bool fullbright, bool skybox, bool drv, bool col)
 {
 	OBJECTNODE * oldfirst = object_list;
 	object_list = new OBJECTNODE;
@@ -209,7 +225,7 @@ void OBJECTS::Add(VERTEX pos, float rotation, string modelname)
 	
 	if (!found)
 	{
-		object_list->model = AddModel(modelname);
+		object_list->model = AddModel(modelname, texname, mip, fullbright, skybox);
 	}
 }
 
@@ -218,14 +234,30 @@ OBJECTNODE::OBJECTNODE()
 	dir.LoadMultIdent();
 }
 
-OBJECTMODEL * OBJECTS::AddModel(string modelname)
+OBJECTMODEL * OBJECTS::AddModel(string modelname, string texname, bool mip, bool fullbright, bool skybox)
 {
 	OBJECTMODEL * oldfirst = model_list;
 	model_list = new OBJECTMODEL;
 	model_list->next = oldfirst;
 	
 	model_list->name = modelname;
+	model_list->fullbright = fullbright;
+	if (fullbright)
+		cout << modelname << endl;
 	model_list->jmodel.Load(path + "/" + modelname);
+	
+	map <string, GLuint>::iterator tslot = texture_db.find(texname);
+	if (tslot == texture_db.end())
+	{
+		GLuint newtexid = utility.TexLoad(path + "/" + texname, mip);
+		texture_db[texname] = newtexid;
+		//cout << texname << ": " << newtexid << endl;
+		model_list->jmodel.TextureID(newtexid, 0);
+	}
+	else
+	{
+		model_list->jmodel.TextureID(tslot->second, 0);
+	}
 	
 	//cout << "Addmodel: " << modelname << endl;
 	return model_list;
@@ -243,25 +275,33 @@ void OBJECTS::LoadObjectsFromFolder(string objectpath)
 	
 	if (o)
 	{
-		string m, t;
+		string m;
+		string t;
+		bool mip;
+		bool fb, sb;
 		VERTEX p;
-		float r = 0;
+		float r;
+		bool c, d;
+		
+		//int count = 0;
 		
 		while (!o.eof())
-		{
+		{	
 			m = utility.sGetParam(o);
-			utility.sGetParam(o); //texture
-			utility.bGetParam(o); //mipmap
-			utility.bGetParam(o); //fullbright
-			utility.bGetParam(o); //skybox
+			t = utility.sGetParam(o);
+			mip = utility.bGetParam(o);
+			fb = utility.bGetParam(o);
+			sb = utility.bGetParam(o);
 			p.x = utility.fGetParam(o);
 			p.y = utility.fGetParam(o);
 			p.z = utility.fGetParam(o);
-			utility.bGetParam(o); //collide-able
-			utility.bGetParam(o); //drive-able
+			//r = utility.fGetParam(o);
+			r = 0;
+			d = utility.bGetParam(o);
+			c = utility.bGetParam(o);
 			
 			if (m != "" && m != utility.GetEOFString())
-				Add(p, r, m);
+				Add(p, r, m, t, mip, fb, sb, d, c);
 		}
 		
 		o.close();
