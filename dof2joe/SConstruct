@@ -1,6 +1,17 @@
-env = Environment(CPPPATH='include')
+opts = Options('vdrift-trackeditor.conf', ARGUMENTS)
+opts.Add('converter', 'Program used to convert graphics from TGA or BMP to PNG. Run \'scons converter=mogrify\' if you have ImageMagick instead of NConvert.', 'nconvert')
+env = Environment(CPPPATH='include', options = opts)
+opts.Update(env)
+opts.Save('vdrift.conf', env)
+
 env.Append(LIBS = ['GL', 'GLU', 'SDL_image'])
+if env['converter'] == 'mogrify':
+    env.Append(CPPDEFINES = [('CONVERT', '\\"mogrify\\"')])
+else:
+    env.Append(CPPDEFINES = [('CONVERT', '\\"nconvert\\"')])
+
 list = Split("""src/dof2joe.cpp
 		src/quat.cpp
 		src/model.cpp""")
+
 env.Program('dof2joe', list)

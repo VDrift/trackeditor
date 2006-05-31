@@ -905,15 +905,20 @@ void WriteObjects(string filename, string outpath, string inpath)
 		else
 		{
 			INDENTPRINT("Object " << o << ": Texture \"" << texname << "\"");
-			
-			if (!lcaseinput)
-				sprintf(buffer, "nconvert -out png -o %s/%s.png %s/%s", 
-					outpath.c_str(), texname.c_str(), inpath.c_str(),
-					textures[models[o].textureid[0]].c_str());
+
+			string texture_filename = inpath + "/";
+			texture_filename += lcaseinput ? texname : textures[models[o].textureid[0]];			
+
+			if( CONVERT == "mogrify" )
+			{
+				sprintf(buffer, "mogrify -format png %s", texture_filename.c_str());
+			}
 			else
-				sprintf(buffer, "nconvert -out png -o %s/%s.png %s/%s", 
-					outpath.c_str(), texname.c_str(), inpath.c_str(),
-					texname.c_str());
+			{
+				sprintf(buffer, "nconvert -out png -o %s/%s.png %s",
+						outpath.c_str(), texname.c_str(), texture_filename.c_str());
+			}
+
 			indent++;
 			INDENTPRINT("Running \"" << buffer << "\"" << endl);
 			system(buffer);
