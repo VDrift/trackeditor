@@ -13,6 +13,7 @@ Converting a track from RACER:
 * Add VDRIFT_TP/about.txt and ensure that the first line is the name of the track.
 * Run VDrift and check out what the track looks like in-game.  Note that you will only be able to drive on the roadways you defined in the track editor since no other surfaces have been flagged as collideable.  Also take a screenshot for the track selection screen.
 * Add the track selection screenshot to VDrift/gui/tracks/VDRIFT_TP.png (hopefully these png files will be moved into the folders of the individual tracks soon).
-* Open up all of the texture files in TRACKEDITOR_TP/objects and review which textures belong to objects that should be collide-able (roads and walls), have full brightess (trees), be mipmapped (fences and fine transparent objects should not be mipmapped), or be skyboxes.
+* Open up all of the texture files in TRACKEDITOR_TP/objects and review which textures belong to objects that should be collide-able (roads and walls), have full brightness (trees), be mipmapped (fences and fine transparent objects should not be mipmapped), or be skyboxes.
+* Any textures that have transparent areas are usually colored #ff00ff in the Racer textures. You'll need to make these truly transparent in the PNG files. An easy way to do this is to use ImageMagick. Use the command "mogrify -transparent rgb\(255,0,255\) file.png". This can be scripted to speed things up of course.
 * Set the correct object properties using the VDrift-tracked/listedit tool (more documentation to come).
 * Done!

@@ -911,7 +911,8 @@ void WriteObjects(string filename, string outpath, string inpath)
 
 			if( CONVERT == "mogrify" )
 			{
-				sprintf(buffer, "mogrify -format png %s", texture_filename.c_str());
+				sprintf(buffer, "convert -format png %s %s/%s.png",
+						texture_filename.c_str(), outpath.c_str(), texname.c_str());
 			}
 			else
 			{
