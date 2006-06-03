@@ -908,7 +908,6 @@ void WriteObjects(string filename, string outpath, string inpath)
 
 			string texture_filename = inpath + "/";
 			texture_filename += lcaseinput ? texname : textures[models[o].textureid[0]];			
-
 			if( CONVERT == "mogrify" )
 			{
 				sprintf(buffer, "convert -format png %s %s/%s.png",

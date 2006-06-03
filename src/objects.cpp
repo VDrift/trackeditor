@@ -296,6 +296,7 @@ void OBJECTS::LoadObjectsFromFolder(string objectpath)
 			p.y = utility.fGetParam(o);
 			p.z = utility.fGetParam(o);
 			//r = utility.fGetParam(o);
+			p.zero(); //these are actually reserved bits
 			r = 0;
 			d = utility.bGetParam(o);
 			c = utility.bGetParam(o);
