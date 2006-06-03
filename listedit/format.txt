@@ -9,5 +9,5 @@
 #is this object a transparent blended texture? (1 for true, 0 for false)
 #reserved
 #reserved
-#driveable (1 for true, 0 for false)
+#driveable (1 for true, 0 for false) -> deprecated, use collide-able flag
 #collide-able (1 for true, 0 for false)

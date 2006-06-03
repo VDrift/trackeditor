@@ -4,20 +4,34 @@
 
 #include <list>
 #include <vector>
+#include <map>
 
 using namespace std;
 
 #include "model.h"
 
 unsigned int indent = 0;
-vector <string> textures;
+class MATERIAL
+{
+public:
+	string name;
+	string texture;
+};
+vector <MATERIAL> textures;
 vector <JOEMODEL> models;
 
+map <string,string> shaders;
+
+map <string,bool> alltextures;
+
 bool verbose = false;
+bool verboseprint = true;
+bool verboseerror = true;
+bool batch = false;
 
 #define VERBOSEPRINT(str) {if (verbose) {for (unsigned int i = 0; i < indent; i++) cout << "\t"; cout << str << endl;}}
-#define INDENTPRINT(str) {for (unsigned int i = 0; i < indent; i++) cout << "\t"; cout << str << endl;}
-#define ERRORPRINT(str) {for (unsigned int i = 0; i < indent; i++) cout << "\t"; cerr << "Error: " << str << endl;}
+#define INDENTPRINT(str) {if (verboseprint) {for (unsigned int i = 0; i < indent; i++) cout << "\t"; cout << str << endl;}}
+#define ERRORPRINT(str) {if (verboseerror) {for (unsigned int i = 0; i < indent; i++) cout << "\t"; cerr << "Error: " << str << endl;}}
 
 string StringToLower(string strToConvert)
 {//change each element of the string to lower case
@@ -138,14 +152,16 @@ bool ReadMAT0(FILE * f, int chunklen, int matid)
 						for (unsigned int i = 0; i < indent; i++)
 							cout << "\t";
 						cout << instr << endl;
-						if (textures[matid].empty())
+						if (textures[matid].texture.empty())
 						{
-							textures[matid] = instr;
-							INDENTPRINT("Using texture: " << textures[matid] << " for material " << matid);
+							textures[matid].texture = instr;
+							if (batch)
+								alltextures[instr] = true;
+							INDENTPRINT("Using texture: " << textures[matid].texture << " for material " << matid);
 						}
 						else
 						{
-							INDENTPRINT("Already have texture: " << textures[matid] << " for material " << matid);
+							INDENTPRINT("Already have texture: " << textures[matid].texture << " for material " << matid);
 						}
 					}
 					else
@@ -188,6 +204,8 @@ bool ReadMAT0(FILE * f, int chunklen, int matid)
 				suc = ReadRString(f, inname);
 				suc = ReadRString(f, instr);
 				INDENTPRINT("Name: " << inname << "," << instr);
+				textures[matid].name = inname;
+				
 			}
 			else if (instr == "MSUB")
 			{
@@ -886,6 +904,26 @@ void WriteObject(string filename, JOEMODEL & obj)
 	fclose(f);
 }
 
+void ConvertTexture(string texture_filename, string outpath, string texname)
+{
+	char buffer[1024];
+	if( strcmp(CONVERT,"mogrify") == 0 )
+	{
+		sprintf(buffer, "convert -format png %s %s/%s.png",
+			texture_filename.c_str(), outpath.c_str(), texname.c_str());
+	}
+	else
+	{
+		sprintf(buffer, "nconvert -out png -o %s/%s.png %s",
+			outpath.c_str(), texname.c_str(), texture_filename.c_str());
+	}
+
+	indent++;
+	INDENTPRINT("Running \"" << buffer << "\"" << endl);
+	system(buffer);
+	indent--;
+}
+
 void WriteObjects(string filename, string outpath, string inpath)
 {
 	bool lcaseinput = true;
@@ -897,32 +935,28 @@ void WriteObjects(string filename, string outpath, string inpath)
 	for (unsigned int o = 0; o < models.size(); o++)
 	{
 		filename = StringToLower(filename);
-		string texname = StringToLower(textures[models[o].textureid[0]]);
+		string texname = StringToLower(textures[models[o].textureid[0]].texture);
+		if (texname.empty())
+		{
+			map<string,string>::iterator cur = shaders.find(textures[models[o].textureid[0]].name);
+			if (cur != shaders.end())
+			{
+				//texname = shaders[textures[models[o].textureid[0]].name];
+				texname = cur->second;
+			}
+		}
+
 		if (texname.empty())
 		{
 			INDENTPRINT("Warning: Object " << o << " has no texture");
 		}
-		else
+		else if (!batch)
 		{
 			INDENTPRINT("Object " << o << ": Texture \"" << texname << "\"");
 
 			string texture_filename = inpath + "/";
-			texture_filename += lcaseinput ? texname : textures[models[o].textureid[0]];			
-			if( CONVERT == "mogrify" )
-			{
-				sprintf(buffer, "convert -format png %s %s/%s.png",
-						texture_filename.c_str(), outpath.c_str(), texname.c_str());
-			}
-			else
-			{
-				sprintf(buffer, "nconvert -out png -o %s/%s.png %s",
-						outpath.c_str(), texname.c_str(), texture_filename.c_str());
-			}
-
-			indent++;
-			INDENTPRINT("Running \"" << buffer << "\"" << endl);
-			system(buffer);
-			indent--;
+			texture_filename += lcaseinput ? texname : textures[models[o].textureid[0]].texture;
+			ConvertTexture(texture_filename, outpath, texname);
 		}
 		
 		indent++;
@@ -953,6 +987,134 @@ void WriteObjects(string filename, string outpath, string inpath)
 	}
 }
 
+bool NextShaderDent(ifstream & s, string desired, string undesired)
+{
+	string instr;
+	s >> instr;
+	while (instr != desired && instr != undesired && !s.eof())
+		s >> instr;
+	
+	if (instr == undesired || s.eof())
+		return false;
+	else return true;
+}
+
+bool NextShaderIndent(ifstream & s)
+{
+	return NextShaderDent(s, "{", "}");
+}
+
+bool NextShaderOutdent(ifstream & s)
+{
+	return NextShaderDent(s, "}", "{");
+}
+
+string GetRemainder(string prefix, string str)
+{
+	string output;
+	unsigned int startpos = prefix.length();
+	if (startpos < str.length())
+		output = str.substr(prefix.length());
+	return output;
+}
+
+bool ProcessShader(ifstream & s, ostream & log, bool dolog)
+{
+	if (s.eof())
+		return false;
+	
+	string rawhandle,handle;
+	string rawmapcandidate,rawmap,map;
+	s >> rawhandle;
+	
+	if (!NextShaderIndent(s))
+	{
+		if (dolog) log << "Error finding next indent" << endl;
+		return false;
+	}
+	if (!NextShaderIndent(s))
+	{
+		if (dolog) log << "Error finding next indent" << endl;
+		return false;
+	}
+	
+	s >> rawmapcandidate;
+	while (rawmapcandidate != "}" && !(rawmapcandidate.find("map") < rawmapcandidate.length()) && !s.eof())
+		s >> rawmapcandidate;
+	if (rawmapcandidate != "}")
+	{
+		rawmap = rawmapcandidate;
+		
+		handle = GetRemainder("shader_", rawhandle);
+		map = GetRemainder("map=", rawmap);
+		
+		if (!handle.empty() && !map.empty())
+		{
+			if (dolog) log << "Handle: " << rawhandle << "," << handle << endl;
+			if (dolog) log << "Map: " << rawmap << "," << map << endl;
+			shaders[handle]=map;
+			if (batch)
+				alltextures[map] = true;
+		}
+		else
+		{
+			if (dolog) log << "Error:  malformed handle or map " << rawhandle << "," << rawmap << endl;
+		}
+		
+		if (!NextShaderOutdent(s))
+		{
+			if (dolog) log << "Error finding next indent" << endl;
+			return false;
+		}
+	}
+	else
+	{
+		if (dolog) log << "Error: Couldn't find map" << endl;
+	}
+
+	if (!NextShaderOutdent(s))
+	{
+		if (dolog) log << "Error finding next indent" << endl;
+		return false;
+	}
+	
+	return true;
+}
+
+bool LoadShaders(string path)
+{
+	shaders.clear();
+	string shaderfile = path+"/track.shd";
+	ifstream s;
+	bool dolog = false;
+	s.open(shaderfile.c_str());
+	if (s)
+	{
+		if (dolog)
+		{
+			ofstream log("shader.log");
+			while (ProcessShader(s,log,dolog));
+		}
+		else
+			while (ProcessShader(s,cout,dolog));
+		return true;
+	}
+	else
+	{
+		//if (dolog) log << "No shaders found: " << shaderfile << endl;
+	}
+	
+	return false;
+}
+
+void ConvertAllTextures(string inpath, string outpath)
+{
+	for (map<string,bool>::iterator i = alltextures.begin(); i != alltextures.end(); i++)
+	{
+		ConvertTexture(inpath+"/"+i->first, outpath, i->first);
+	}
+}
+
 int main(int argc, char * argv[])
 {
 	if (argc <= 1)
@@ -977,7 +1139,15 @@ int main(int argc, char * argv[])
 		curarg++;
 		outpath = args[curarg];
 		curarg++;
+		batch = true;
 	}
+	else
+		batch = false;
+	
+	alltextures.clear();
+	
+	bool haveshaders = false;
+	string batchpath;
 	
 	for (unsigned int i = curarg; i < (unsigned int) argc; i++)
 	{
@@ -989,20 +1159,42 @@ int main(int argc, char * argv[])
 		
 		string filename = args[i];
 		
-		string shortfn = filename;
+		string shortfn;
+		string inpath;
+		
+		shortfn = filename;
 		unsigned int loc = shortfn.rfind("/",shortfn.length()-1);
 		if (loc + 1 < filename.length())
 		{
 			shortfn = shortfn.substr(loc+1);
 		}
 		
-		string inpath = ".";
+		inpath = ".";
 		if (loc + 1 < filename.length())
 		{
 			inpath = filename.substr(0,loc);
 		}
 		
+		if (batch && !haveshaders)
+		{
+			if (LoadShaders(inpath))
+				cout << "Found shaders" << endl;
+			haveshaders = true;
+		}
+		else if (!batch)
+		{
+			if (LoadShaders(inpath))
+				cout << "Found shaders" << endl;
+		}
+		
+		if (batch && batchpath.empty()) batchpath = inpath;
+		
 		WriteObjects(shortfn, outpath, inpath);
+	}
+	
+	if (batch)
+	{
+		ConvertAllTextures(batchpath, outpath);
 	}
 	
 	return 0;
