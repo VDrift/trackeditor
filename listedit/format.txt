@@ -1,0 +1,13 @@
+#vdrift object list file format v0.4
+
+#format is:
+#model filename (no spaces allowed)
+#texture filename (no spaces allowed)
+#mipmap texture (1 for true, 0 for false)
+#disable lighting (1 for true, 0 for false)
+#is this a skybox? (1 for true, 0 for false)
+#is this object a transparent blended texture? (1 for true, 0 for false)
+#reserved
+#reserved
+#driveable (1 for true, 0 for false)
+#collide-able (1 for true, 0 for false)
