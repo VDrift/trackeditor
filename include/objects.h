@@ -36,6 +36,7 @@ public:
 	string name;
 	OBJECTMODEL * next;
 	bool fullbright;
+	bool skybox;
 };
 
 class OBJECTNODE
@@ -75,6 +76,7 @@ public:
 	void DeleteAll();
 
 	bool FindClosestVert(VERTEX orig, VERTEX dir, VERTEX &out);
+	bool FindClosestVert(VERTEX orig, VERTEX dir, VERTEX &out, string & obj);
 	bool AutoFindClosestVert(VERTEX orig, VERTEX dir, VERTEX &out);
 
 	void LoadObjectsFromFolder(string objectpath);

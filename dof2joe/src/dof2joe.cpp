@@ -987,26 +987,43 @@ void WriteObjects(string filename, string outpath, string inpath)
 	}
 }
 
-bool NextShaderDent(ifstream & s, string desired, string undesired)
+bool ShaderDent(ifstream & s, string desired, string undesired, bool allowundesired)
 {
 	string instr;
-	s >> instr;
-	while (instr != desired && instr != undesired && !s.eof())
+	int dent = 1;
+	while (dent > 0 && !s.eof())
+	{
 		s >> instr;
+		while (instr != desired && instr != undesired && !s.eof())
+			s >> instr;
+		if (instr == desired)
+			dent--;
+		if (instr == undesired)
+		{
+			if (allowundesired)
+				dent++;
+			else
+				dent--;
+		}
+	}
 	
-	if (instr == undesired || s.eof())
+	if (s.eof())
 		return false;
+	
+	if (!allowundesired && instr == undesired)
+		return false;
+	
 	else return true;
 }
 
 bool NextShaderIndent(ifstream & s)
 {
-	return NextShaderDent(s, "{", "}");
+	return ShaderDent(s, "{", "}", false);
 }
 
 bool NextShaderOutdent(ifstream & s)
 {
-	return NextShaderDent(s, "}", "{");
+	return ShaderDent(s, "}", "{", true);
 }
 
 string GetRemainder(string prefix, string str)
@@ -1086,7 +1103,7 @@ bool LoadShaders(string path)
 	shaders.clear();
 	string shaderfile = path+"/track.shd";
 	ifstream s;
-	bool dolog = false;
+	bool dolog = true;
 	s.open(shaderfile.c_str());
 	if (s)
 	{

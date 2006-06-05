@@ -482,12 +482,13 @@ void MainUnpause()
 /* function to handle key press events */
 void handleKeyPress( SDL_keysym *keysym )
 {
-	VERTEX tvec1, tvec2, fr, fl, bl, br;
+	VERTEX tvec1, tvec2, fr, fl, bl, br, camray, selvert;
 	QUATERNION trot;
 	BEZIER * lastbez;
 	BEZIER patch;
 	bool l, r;
 	int i;
+	string tstr;
 	
 	//else if (timefactor == 0 && !menu.InMenu()) timefactor = 0;
 		//		else timefactor = 1.0;
@@ -697,6 +698,13 @@ void handleKeyPress( SDL_keysym *keysym )
 					mq1.AddMessage("Can't auto-trace road: no roads selected");
 				}
 			}
+			break;
+		
+		case 'i':
+			camray.z = -1;
+			camray = cam.dir.ReturnConjugate().RotateVec(camray);
+			if (objects.FindClosestVert(cam.position.ScaleR(-1.0), camray, selvert, tstr))
+				cout << tstr << endl;
 			break;
 		
 		//case SDLK_F11:

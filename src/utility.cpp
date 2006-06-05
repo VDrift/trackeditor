@@ -409,7 +409,7 @@ bool UTILITY::bGetParam(ifstream &ffrom)
 		ffrom >> trashstr;
 	}
 	
-	if (trashstr == "true")
+	if (trashstr == "true" || trashstr == "1")
 		return true;
 	else
 		return false;

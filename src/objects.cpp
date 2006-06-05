@@ -87,7 +87,7 @@ void OBJECTS::DrawObject(OBJECTNODE * object)
 			   cam.frustum[i][1]*object->pos.y+
 			   cam.frustum[i][2]*object->pos.z+
 			   cam.frustum[i][3];
-			if (rd<=-bound)
+			if (rd<=-bound && !object->model->skybox)
 			{
 				return;
 			}
@@ -95,15 +95,31 @@ void OBJECTS::DrawObject(OBJECTNODE * object)
 	}
 	//else cout << "inside object" << endl;
 	
-	glPushMatrix();
-			
-	float transform_matrix[16];
+	if (object->model->skybox)
+	{
+		glPushMatrix();
+		/*glMatrixMode( GL_PROJECTION );
+		glPushMatrix();
+		glLoadIdentity( );
+		gluPerspective( 45.0f, (float)display_x / (float)display_y, 0.1f, 10000.0 );
+		glMatrixMode( GL_MODELVIEW );*/
+		GLdouble temp_matrix[16];
+		cam.PutTransformInto(temp_matrix);
+		glLoadMatrixd(temp_matrix);
+		glDepthMask(0);
+	}
+	else
+	{
+		glPushMatrix();
+		GLfloat transform_matrix[16];
+		object->dir.GetMat(transform_matrix);
+		
+		glTranslatef(object->pos.x, object->pos.y, object->pos.z);
+		glMultMatrixf(transform_matrix);
+	}
 	
-	object->dir.GetMat(transform_matrix);
-	
-	glTranslatef(object->pos.x, object->pos.y, object->pos.z);
-	glMultMatrixf(transform_matrix);
 	glRotated(-90, 1,0,0);
+	
 	
 	if (object->model != NULL)
 	{
@@ -129,21 +145,24 @@ void OBJECTS::DrawObject(OBJECTNODE * object)
 		object->model->jmodel.DrawStatic();
 		
 		//draw verts
-		glDisable(GL_ALPHA_TEST);
-		//glDisable(GL_DEPTH_TEST);
-		glDisable(GL_TEXTURE_2D);
-		glPointSize(4.0);
-		glDisable(GL_LIGHTING);
-		glColor4f(0,0,1,1);
-		glPolygonMode(GL_FRONT_AND_BACK, GL_POINT);
-		object->model->jmodel.DrawStatic(false);
-		
-		glDisable(GL_TEXTURE_2D);
-		glDisable(GL_DEPTH_TEST);
-		glPointSize(1.0);
-		glColor4f(0,0,1,1);
-		glPolygonMode(GL_FRONT_AND_BACK, GL_POINT);
-		object->model->jmodel.DrawStatic(false);
+		if (!object->model->skybox)
+		{
+			glDisable(GL_ALPHA_TEST);
+			//glDisable(GL_DEPTH_TEST);
+			glDisable(GL_TEXTURE_2D);
+			glPointSize(4.0);
+			glDisable(GL_LIGHTING);
+			glColor4f(0,0,1,1);
+			glPolygonMode(GL_FRONT_AND_BACK, GL_POINT);
+			object->model->jmodel.DrawStatic(false);
+			
+			glDisable(GL_TEXTURE_2D);
+			glDisable(GL_DEPTH_TEST);
+			glPointSize(1.0);
+			glColor4f(0,0,1,1);
+			glPolygonMode(GL_FRONT_AND_BACK, GL_POINT);
+			object->model->jmodel.DrawStatic(false);
+		}
 		
 		glEnable(GL_LIGHTING);
 		glEnable(GL_DEPTH_TEST);
@@ -154,7 +173,16 @@ void OBJECTS::DrawObject(OBJECTNODE * object)
 	else
 		cout << "NULL model" << endl;
 	
-	glPopMatrix();
+	if (object->model->skybox)
+	{
+		glDepthMask(1);
+		/*glMatrixMode( GL_PROJECTION );
+		glPopMatrix();*/
+		glMatrixMode( GL_MODELVIEW );
+		glPopMatrix();
+	}
+	else
+		glPopMatrix();
 }
 
 void OBJECTS::Draw()
@@ -242,8 +270,7 @@ OBJECTMODEL * OBJECTS::AddModel(string modelname, string texname, bool mip, bool
 	
 	model_list->name = modelname;
 	model_list->fullbright = fullbright;
-	if (fullbright)
-		cout << modelname << endl;
+	model_list->skybox = skybox;
 	model_list->jmodel.Load(path + "/" + modelname);
 	
 	map <string, GLuint>::iterator tslot = texture_db.find(texname);
@@ -315,6 +342,12 @@ void OBJECTS::LoadObjectsFromFolder(string objectpath)
 
 bool OBJECTS::FindClosestVert(VERTEX orig, VERTEX dir, VERTEX &out)
 {
+	string obj;
+	return FindClosestVert(orig, dir, out, obj);
+}
+
+bool OBJECTS::FindClosestVert(VERTEX orig, VERTEX dir, VERTEX &out, string & obj)
+{
 	float mindist = SELECT_DISTANCE * 2.0;
 	VERTEX relobjpos, tvert, rayproj, selvert;
 	int i;
@@ -344,6 +377,7 @@ bool OBJECTS::FindClosestVert(VERTEX orig, VERTEX dir, VERTEX &out)
 				{
 					mindist = (tvert - rayproj).len();
 					selvert = tvert + orig;
+					obj = curpos->model->name;
 				}
 			}
 		}
@@ -365,6 +399,7 @@ bool OBJECTS::FindClosestVert(VERTEX orig, VERTEX dir, VERTEX &out)
 	}
 	else
 	{
+		obj = "";
 		return false;
 	}
 }
