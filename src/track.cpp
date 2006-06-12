@@ -250,12 +250,13 @@ void ROADSTRIP::Visualize (bool wireframe, bool fill, VERTEX color)
 	//cout << drawn << "/" << count << endl;
 }
 
-bool ROADSTRIP::Collide(VERTEX origin, VERTEX direction, VERTEX &outtri, bool closest)
+bool ROADSTRIP::Collide(VERTEX origin, VERTEX direction, VERTEX &outtri, bool closest, BEZIER * &collidepatch)
 {
 	BEZIERNODE * curnode = patchnodes;
 	
 	bool collide;
 	bool hadcollision = false;
+	BEZIER * colpatch = NULL;
 	VERTEX tvert;
 	
 	while (curnode != NULL)
@@ -265,6 +266,7 @@ bool ROADSTRIP::Collide(VERTEX origin, VERTEX direction, VERTEX &outtri, bool cl
 		if (collide && !closest)
 		{
 			outtri = tvert;
+			collidepatch = &(curnode->patch);
 			return true;
 		}
 		else if (collide && closest)
@@ -272,6 +274,7 @@ bool ROADSTRIP::Collide(VERTEX origin, VERTEX direction, VERTEX &outtri, bool cl
 			if ((hadcollision && (origin - tvert).len() < (origin - outtri).len()) || !hadcollision)
 			{
 				outtri = tvert;
+				colpatch = &(curnode->patch);
 			}
 			
 			hadcollision = true;
@@ -282,6 +285,7 @@ bool ROADSTRIP::Collide(VERTEX origin, VERTEX direction, VERTEX &outtri, bool cl
 	
 	if (closest && hadcollision)
 	{
+		collidepatch = colpatch;
 		return true;
 	}
 	
@@ -420,6 +424,17 @@ void TRACK::Write(string trackname)
 	trackconfig.SetParam("start orientation-xyz", sov.v3());
 	trackconfig.SetParam("start orientation-w", so.w);
 	trackconfig.SetParam("cull faces", "yes");
+	int count = 0;
+	int lapsize = lapsequence.size();
+	trackconfig.SetParam("lap sequences", lapsize);
+	for (vector <LAPAREA>::iterator i = lapsequence.begin(); i != lapsequence.end(); i++,count++)
+	{
+		stringstream lapname;
+		lapname << "lap sequence " << count;
+		VERTEX laps;
+		laps.Set(i->roadidx, i->patchidx, 0);
+		trackconfig.SetParam(lapname.str(), laps.v3());
+	}
 	trackconfig.Write();
 	
 	trackfile << NumRoads() << endl << endl;
@@ -450,6 +465,8 @@ int TRACK::NumRoads()
 
 void TRACK::Load(string trackname)
 {
+	ClearLapSequence();
+	
 	ifstream trackfile;
 	trackfile.open((settings.GetDataDir() + "/tracks/" + trackname + "/roads.trk").c_str());
 	
@@ -469,6 +486,20 @@ void TRACK::Load(string trackname)
 	so.z = sov.z;
 	trackconfig.GetParam("start orientation-w", so.w);
 	SetStartOrientation(so);
+	
+	int lapmarkers;
+	trackconfig.GetParam("lap sequences", lapmarkers);
+	for (int l = 0; l < lapmarkers; l++)
+	{
+		float lapraw[3];
+		stringstream lapname;
+		lapname << "lap sequence " << l;
+		trackconfig.GetParam(lapname.str(), lapraw);
+		LAPAREA newarea;
+		newarea.roadidx = (int) lapraw[0];
+		newarea.patchidx = (int) lapraw[1];
+		lapsequence.push_back(newarea);
+	}
 	
 	int numroads, i;
 	
@@ -536,7 +567,7 @@ void TRACK::Delete(ROADSTRIP * striptodel)
 	striptodel = NULL;
 }
 
-bool TRACK::Collide(VERTEX origin, VERTEX direction, VERTEX &outtri, bool closest, ROADSTRIP * &collideroad)
+bool TRACK::Collide(VERTEX origin, VERTEX direction, VERTEX &outtri, bool closest, ROADSTRIP * &collideroad, BEZIER * &collidepatch)
 {
 	ROADSTRIPNODE * curnode = roads;
 	
@@ -547,7 +578,7 @@ bool TRACK::Collide(VERTEX origin, VERTEX direction, VERTEX &outtri, bool closes
 	while (curnode != NULL)
 	{
 		//curnode->patch.Visualize(wireframe, fill, color);
-		collide = curnode->road.Collide(origin, direction, tvert, closest);
+		collide = curnode->road.Collide(origin, direction, tvert, closest, collidepatch);
 		if (collide && !closest)
 		{
 			outtri = tvert;
@@ -574,4 +605,82 @@ bool TRACK::Collide(VERTEX origin, VERTEX direction, VERTEX &outtri, bool closes
 	}
 	
 	return false;
+}
+
+void TRACK::AddLapSequence(BEZIER * patch)
+{
+	bool found = false;
+	ROADSTRIPNODE * curnode = roads;
+	
+	int ridx = 0;
+	
+	LAPAREA lap;
+	
+	while (curnode != NULL)
+	{
+		BEZIERNODE * curp = curnode->road.patchnodes;
+		int pidx = 0;
+		
+		while (curp != NULL)
+		{
+			if (patch == &(curp->patch))
+			{
+				found = true;
+				lap.roadidx = ridx;
+				lap.patchidx = pidx;
+			}
+			
+			pidx++;
+			curp = curp->next;
+		}
+		
+		ridx++;
+		curnode = curnode->next;
+	}
+	
+	if (found)
+	{
+		lapsequence.push_back(lap);
+	}
+	else
+	{
+		cerr << "Error finding bezier for lap sequence" << endl;
+	}
+}
+
+BEZIER * TRACK::GetLapSeq(int idx)
+{
+	//return &(lapsequence[idx]);
+	int ridx = lapsequence[idx].roadidx;
+	int pidx = lapsequence[idx].patchidx;
+	
+	ROADSTRIPNODE * curnode = roads;
+	
+	int ri = 0;
+	
+	while (curnode != NULL)
+	{
+		if (ri == ridx)
+		{
+			BEZIERNODE * curp = curnode->road.patchnodes;
+			int pi = 0;
+			
+			while (curp != NULL)
+			{
+				if (pidx == pi)
+				{
+					return &(curp->patch);
+				}
+				
+				pi++;
+				curp = curp->next;
+			}
+		}
+		
+		ri++;
+		curnode = curnode->next;
+	}
+	
+	cerr << "Error finding bezier for lap sequence in GetLapSeq(" << idx << ")" << endl;
+	return NULL;
 }

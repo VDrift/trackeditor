@@ -29,6 +29,11 @@
 #include "configfile.h"
 #include "globals.h"
 
+#include <sstream>
+
+#include <list>
+#include <vector>
+
 class BEZIERNODE
 {
 public:
@@ -40,10 +45,10 @@ public:
 class ROADSTRIP
 {
 private:
-	BEZIERNODE * patchnodes;
 	void ClearPatches();
 	
 public:
+	BEZIERNODE * patchnodes;
 	ROADSTRIP();
 	~ROADSTRIP() {ClearPatches();}
 	BEZIER * Add(BEZIER newpatch);
@@ -54,7 +59,7 @@ public:
 	void Visualize (bool wireframe, bool fill, VERTEX color);
 	BEZIER * GetLastPatch();
 	int NumPatches();
-	bool Collide(VERTEX origin, VERTEX direction, VERTEX &outtri, bool closest);
+	bool Collide(VERTEX origin, VERTEX direction, VERTEX &outtri, bool closest, BEZIER * &collidepatch);
 };
 
 class ROADSTRIPNODE
@@ -65,6 +70,13 @@ public:
 	ROADSTRIPNODE() {next = NULL;}
 };
 
+class LAPAREA
+{
+public:
+	unsigned int roadidx;
+	unsigned int patchidx;
+};
+
 class TRACK
 {
 private:
@@ -72,6 +84,7 @@ private:
 	int NumRoads();
 	VERTEX startloc;
 	QUATERNION startquat;
+	vector <LAPAREA> lapsequence;
 	
 public:
 	TRACK();
@@ -82,11 +95,16 @@ public:
 	void Write(string trackname);
 	void Load(string trackname);
 	void Delete(ROADSTRIP * striptodel);
-	bool Collide(VERTEX origin, VERTEX direction, VERTEX &outtri, bool closest, ROADSTRIP * &collideroad);
+	bool Collide(VERTEX origin, VERTEX direction, VERTEX &outtri, bool closest, ROADSTRIP * &collideroad, BEZIER * &collidepatch);
 	void SetStart(VERTEX newloc) {startloc = newloc;}
 	VERTEX GetStart() {return startloc;}
 	void SetStartOrientation(QUATERNION newquat) {startquat = newquat;}
 	QUATERNION GetStartOrientation() {return startquat;}
+	
+	void ClearLapSequence() {lapsequence.clear();}
+	void AddLapSequence(BEZIER * patch);
+	int NumLapSeqs() {return lapsequence.size();}
+	BEZIER * GetLapSeq(int idx);
 };
 
 #define _TRACK_H

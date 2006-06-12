@@ -485,6 +485,8 @@ void handleKeyPress( SDL_keysym *keysym )
 	VERTEX tvec1, tvec2, fr, fl, bl, br, camray, selvert;
 	QUATERNION trot;
 	BEZIER * lastbez;
+	BEZIER * colbez;
+	ROADSTRIP * tempstrip;
 	BEZIER patch;
 	bool l, r;
 	int i;
@@ -606,7 +608,7 @@ void handleKeyPress( SDL_keysym *keysym )
 			tvec1.zero();
 			tvec1.z = -1;
 			tvec2 = cam.dir.ReturnConjugate().RotateVec(tvec1);
-			l = track.Collide(cam.position.ScaleR(-1.0), tvec2, tvec1, true, activestrip);
+			l = track.Collide(cam.position.ScaleR(-1.0), tvec2, tvec1, true, activestrip, colbez);
 			if (!l)
 			{
 				mq1.AddMessage("Can't select road: no road found under cursor");
@@ -705,6 +707,27 @@ void handleKeyPress( SDL_keysym *keysym )
 			camray = cam.dir.ReturnConjugate().RotateVec(camray);
 			if (objects.FindClosestVert(cam.position.ScaleR(-1.0), camray, selvert, tstr))
 				cout << tstr << endl;
+			break;
+			
+		case '-':
+			track.ClearLapSequence();
+			mq1.AddMessage("All lap sequence markers cleared");
+			break;
+		
+		case 'e':
+			//mq1.AddMessage("Saved to file");
+			tvec1.zero();
+			tvec1.z = -1;
+			tvec2 = cam.dir.ReturnConjugate().RotateVec(tvec1);
+			l = track.Collide(cam.position.ScaleR(-1.0), tvec2, tvec1, true, tempstrip, colbez);
+			if (!l)
+			{
+				mq1.AddMessage("Can't create lap sequence marker: no road found under cursor");
+			}
+			else
+			{
+				track.AddLapSequence(colbez);
+			}
 			break;
 		
 		//case SDLK_F11:
@@ -1367,6 +1390,20 @@ int drawGLScene( GLvoid )
 		
 		track.VisualizeRoads(true, false, activestrip);
 		
+		for (int l = 0; l < track.NumLapSeqs(); l++)
+		{
+			BEZIER * lapbez = track.GetLapSeq(l);
+			if (lapbez != NULL)
+			{
+				VERTEX reddish;
+				reddish.x = 0.5;
+				reddish.y = 0.2;
+				reddish.z = 0.2;
+				lapbez->Visualize(true, false, reddish);
+			}
+		}
+		
+		
 		//image in the framebuffer is now complete.
 		
 		
@@ -1540,6 +1577,9 @@ int drawGLScene( GLvoid )
 	"N\n"
 	"R\n"
 	"S\n"
+	"I\n"
+	"E\n"
+	"- (minus)\n"
 	"BACKSPACE\n"
 	"ESCAPE\n"
 	, 1, 5, 1.0);
@@ -1552,6 +1592,9 @@ int drawGLScene( GLvoid )
 	"Create a new road (the new road is created once you add patches to it)\n"
 	"Select the road under the cursor\n"
 	"Save the track\n"
+	"Print the object that owns the selected vertex to the console\n"
+	"Mark a road segment as part of a lap sequence\n"
+	"Clear all lap sequences\n"
 	"Delete the last bezier patch on this road\n"
 	"Quit the editor\n"
 	, 1, 5, 1.0);

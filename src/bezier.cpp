@@ -80,7 +80,7 @@ void BEZIER::Visualize(bool wireframe, bool fill, VERTEX color)
 	if (!fill && !wireframe)
 		return;
 	
-	glPushAttrib(GL_ALL_ATTRIB_BITS);
+	//glPushAttrib(GL_ALL_ATTRIB_BITS);
 	
 	glDisable(GL_LIGHTING);
 	glDisable(GL_TEXTURE_2D);
@@ -106,7 +106,7 @@ void BEZIER::Visualize(bool wireframe, bool fill, VERTEX color)
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
 		//glColor4f(.5,.6,.5,0.1);
-		glColor4f(color.x, color.y, color.z,0.1);
+		glColor4f(color.x, color.y, color.z,0.5);
 		DrawControlPoints();
 		
 		glEnable(GL_DEPTH_TEST);
@@ -117,7 +117,9 @@ void BEZIER::Visualize(bool wireframe, bool fill, VERTEX color)
 	}
 	
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-	glPopAttrib();
+	//glPopAttrib();
+	glEnable(GL_LIGHTING);
+	glEnable(GL_TEXTURE_2D);
 }
 
 void BEZIER::DrawSurf(int div, float trans)
