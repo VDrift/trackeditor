@@ -10,8 +10,8 @@
 #disable lighting (1 for true, 0 for false)
 #is this a skybox? (1 for true, 0 for false)
 #is this object a transparent blended texture? (1 for true, 0 for false)
-#reserved
-#bumpiness
+#bump wavelength
+#bump amplitude
 #driveable (1 for true, 0 for false) -> deprecated, use collide-able flag
 #collide-able (1 for true, 0 for false)
 #friction coefficient for non-treaded tires
