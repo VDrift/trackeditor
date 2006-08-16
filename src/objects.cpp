@@ -304,11 +304,20 @@ void OBJECTS::LoadObjectsFromFolder(string objectpath)
 	{
 		string m;
 		string t;
+		string extra;
 		bool mip;
 		bool fb, sb;
 		VERTEX p;
 		float r;
 		bool c, d;
+		
+		int numparams = utility.iGetParam(o);
+		
+		if (numparams < 1)
+		{
+			cerr << "Suspicious numparams value: " << numparams << endl;
+			return;
+		}
 		
 		//int count = 0;
 		
@@ -327,6 +336,11 @@ void OBJECTS::LoadObjectsFromFolder(string objectpath)
 			r = 0;
 			d = utility.bGetParam(o);
 			c = utility.bGetParam(o);
+			
+			for (int i = 0; i < numparams - 10; i++)
+			{
+				extra = utility.sGetParam(o);
+			}
 			
 			if (m != "" && m != utility.GetEOFString())
 				Add(p, r, m, t, mip, fb, sb, d, c);

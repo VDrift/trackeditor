@@ -1,4 +1,7 @@
-#vdrift object list file format v0.4
+#vdrift object list file format v0.5
+
+#how many parameters per entry
+12
 
 #format is:
 #model filename (no spaces allowed)
@@ -8,6 +11,8 @@
 #is this a skybox? (1 for true, 0 for false)
 #is this object a transparent blended texture? (1 for true, 0 for false)
 #reserved
-#reserved
+#bumpiness
 #driveable (1 for true, 0 for false) -> deprecated, use collide-able flag
 #collide-able (1 for true, 0 for false)
+#friction coefficient for non-treaded tires
+#friction coefficient for treaded tires
