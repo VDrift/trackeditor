@@ -1,18 +1,20 @@
 #vdrift object list file format v0.5
 
 #how many parameters per entry
-12
+14
 
 #format is:
-#model filename (no spaces allowed)
-#texture filename (no spaces allowed)
-#mipmap texture (1 for true, 0 for false)
-#disable lighting (1 for true, 0 for false)
-#is this a skybox? (1 for true, 0 for false)
-#is this object a transparent blended texture? (1 for true, 0 for false)
-#bump wavelength
-#bump amplitude
-#driveable (1 for true, 0 for false) -> deprecated, use collide-able flag
-#collide-able (1 for true, 0 for false)
-#friction coefficient for non-treaded tires
-#friction coefficient for treaded tires
+#0. model filename (no spaces allowed)
+#1. texture filename (no spaces allowed)
+#2. mipmap texture (1 for true, 0 for false)
+#3. disable lighting (1 for true, 0 for false)
+#4. is this a skybox? (1 for true, 0 for false)
+#5. is this object a transparent blended texture? (1 for true, 0 for false)
+#6. bump wavelength
+#7. bump amplitude
+#8. driveable (1 for true, 0 for false) -> deprecated, use collide-able flag
+#9. collide-able (1 for true, 0 for false)
+#10. friction coefficient for non-treaded tires
+#11. friction coefficient for treaded tires
+#12. rolling resistance coefficient (http://en.wikipedia.org/wiki/Rolling_friction)
+#13. rolling drag
