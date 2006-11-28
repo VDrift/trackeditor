@@ -20,9 +20,13 @@ const bool verbose = false;
 void PrintUsage()
 {
 	cout << "Usage: joepack -c output.jpk file1.joe file2.joe ..." << endl;
+	cout << "Usage: joepack -cf output.jpk filelist.txt" << endl;
 	cout << "Usage: joepack -x input.jpk" << endl;
+	cout << "Usage: joepack -l input.jpk" << endl;
 	cout << "-c\tCreate jpk file" << endl;
+	cout << "-cf\tCreate jpk file from a whitespace-delimited list file" << endl;
 	cout << "-x\tExtract jpk file" << endl;
+	cout << "-l\tList contents of a jpk file" << endl;
 }
 
 unsigned int FileLength(string fn)
@@ -143,13 +147,15 @@ int main(int argc, char * argv[])
 	for (unsigned int i = 0; i < (unsigned int) argc; i++)
 	{
 		args[i] = argv[i];
+		//cout << i << ". " << args[i] << "/" << argc << endl;
 	}
+	//return 0;
 	
 	string jpkfile = args[2];
 	
 	unsigned int curarg = 3;
 	
-	if (args[1] == "-c" && argc >= 3)
+	if ((args[1] == "-cf" || args[1] == "-c") && argc > 3)
 	{
 		FILE * f = fopen (jpkfile.c_str(), "wb");
 		
@@ -157,15 +163,50 @@ int main(int argc, char * argv[])
 		string versionstr = JPKVERSION;
 		fwrite(versionstr.c_str(), 1, versionstr.length(), f);
 		
+		//read in the input list from a file
+		bool filelist = (args[1] == "-cf");
+		list <string> fargs;
+		if (filelist)
+		{
+			ifstream fl;
+			fl.open(args[3].c_str());
+			if (!fl)
+			{
+				cerr << "Unable to open file list " << args[3] << endl;
+				return 1;
+			}
+			
+			string inpstr;
+			fl >> inpstr;
+			while (fl && !inpstr.empty())
+			{
+				fargs.push_back(inpstr);
+				fl >> inpstr;
+			}
+		}
+		
 		unsigned int numobjs = argc - curarg;
+		if (filelist)
+			numobjs = fargs.size();
 		fwrite(&numobjs, sizeof(unsigned int), 1, f);
 		
 		unsigned int maxstrlen = 0;
 		
-		for (unsigned int i = curarg; i < (unsigned int) argc; i++)
+		if (filelist)
 		{
-			if (args[i].length() > maxstrlen)
-				maxstrlen = args[i].length();
+			for (list <string>::iterator i = fargs.begin(); i != fargs.end(); i++)
+			{
+				if (i->length() > maxstrlen)
+					maxstrlen = i->length();
+			}
+		}
+		else
+		{
+			for (unsigned int i = curarg; i < (unsigned int) argc; i++)
+			{
+				if (args[i].length() > maxstrlen)
+					maxstrlen = args[i].length();
+			}
 		}
 		
 		fwrite(&maxstrlen, sizeof(unsigned int), 1, f);
@@ -180,14 +221,24 @@ int main(int argc, char * argv[])
 		unsigned int curpos = datastart;
 		
 		//write out the FAT
-		for (unsigned int i = curarg; i < (unsigned int) argc; i++)
+		//for (unsigned int i = curarg; i < (unsigned int) argc; i++)
+		list <string>::iterator fit = fargs.begin();
+		for (unsigned int i = 0; i < numobjs; i++)
 		{
-			strcpy(cstrfilename, args[i].c_str());
+			string objname;
+			if (filelist)
+			{
+				objname = *fit;
+				fit++;
+			}
+			else
+				objname = args[i+curarg];
+			
+			strcpy(cstrfilename, objname.c_str());
 			cstrfilename[maxstrlen] = '\0';
-			cstrfilename[args[i].length()] = '\0';
+			cstrfilename[objname.length()] = '\0';
 			
 			//string objname = ShortName(args[i]);
-			string objname = args[i];
 			cout << "Reading " << objname << "..." << endl;
 			//unsigned int namelen = objname.length();
 			unsigned int filelen = FileLength(objname);
@@ -200,10 +251,20 @@ int main(int argc, char * argv[])
 			curpos += filelen;
 		}
 		
-		for (unsigned int i = curarg; i < (unsigned int) argc; i++)
+		cout << "Writing output..." << endl;
+		
+		fit = fargs.begin();
+		for (unsigned int i = 0; i < numobjs; i++)
 		{
-			string objname = args[i];
-			
+			string objname;
+			if (filelist)
+			{
+				objname = *fit;
+				fit++;
+			}
+			else
+				objname = args[i+curarg];
+							
 			DPRINT(objname << " ftell: " << ftell(f));
 			
 			WriteFileToPack(f, objname);
@@ -211,13 +272,13 @@ int main(int argc, char * argv[])
 		
 		DPRINT(maxstrlen << " is maximum filename length");
 		
-		cout << "Done. " << argc - 3 << " files put in " << jpkfile << endl;
+		cout << "Done. " << numobjs << " files put in " << jpkfile << endl;
 		
 		DPRINT("Output file size: " << curpos);
 		
 		fclose(f);
 	}
-	else if (args[1] == "-x")
+	else if (args[1] == "-x" && argc > 2)
 	{
 		JOEPACK pack;
 		if (!pack.LoadPack(args[2]))
@@ -242,6 +303,30 @@ int main(int argc, char * argv[])
 			}
 			
 			cout << "Done." << endl;
+		}
+	}
+	else if (args[1] == "-l" && argc > 2)
+	{
+		JOEPACK pack;
+		if (!pack.LoadPack(args[2]))
+		{
+			cerr << "Error loading joepack " << args[2] << endl;
+		}
+		else
+		{
+			map <string, JOEPACK_FADATA> & fat = pack.GetFAT();
+			
+			cout << "Listing contents of " << args[2] << " (" << fat.size() << " objects total):" << endl;
+			
+			int count = 0;
+			for (map <string, JOEPACK_FADATA>::iterator i = fat.begin(); i != fat.end(); i++)
+			{
+				cout << count << ". " << i->first << endl;
+				//Unpack(i->first, pack);
+				count++;
+			}
+			
+			//cout << "Done." << endl;
 		}
 	}
 	else
