@@ -487,11 +487,11 @@ void TRACK::Load(string trackname)
 	trackconfig.GetParam("start orientation-w", so.w);
 	SetStartOrientation(so);
 	
-	int lapmarkers;
+	int lapmarkers=0;
 	trackconfig.GetParam("lap sequences", lapmarkers);
 	for (int l = 0; l < lapmarkers; l++)
 	{
-		float lapraw[3];
+		float lapraw[3]={0.,0.,0.};
 		stringstream lapname;
 		lapname << "lap sequence " << l;
 		trackconfig.GetParam(lapname.str(), lapraw);
