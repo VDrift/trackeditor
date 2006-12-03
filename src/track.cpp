@@ -435,6 +435,8 @@ void TRACK::Write(string trackname)
 		laps.Set(i->roadidx, i->patchidx, 0);
 		trackconfig.SetParam(lapname.str(), laps.v3());
 	}
+	trackconfig.SetParam("non-treaded friction coefficient", (float)1.0);
+	trackconfig.SetParam("treaded friction coefficient", (float)0.9);
 	trackconfig.Write();
 	
 	trackfile << NumRoads() << endl << endl;
