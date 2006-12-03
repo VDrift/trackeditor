@@ -82,7 +82,7 @@ class TRACK
 private:
 	ROADSTRIPNODE * roads;
 	int NumRoads();
-	VERTEX startloc;
+	std::vector<VERTEX> startloc;
 	QUATERNION startquat;
 	vector <LAPAREA> lapsequence;
 	
@@ -96,8 +96,9 @@ public:
 	void Load(string trackname);
 	void Delete(ROADSTRIP * striptodel);
 	bool Collide(VERTEX origin, VERTEX direction, VERTEX &outtri, bool closest, ROADSTRIP * &collideroad, BEZIER * &collidepatch);
-	void SetStart(VERTEX newloc) {startloc = newloc;}
-	VERTEX GetStart() {return startloc;}
+	void SetStart(VERTEX newloc) {startloc.push_back(newloc);}
+	void RemoveStart() {startloc.pop_back();}
+	VERTEX GetStart(unsigned int i) {return (i>=startloc.size())?startloc[0]:startloc[i];}
 	void SetStartOrientation(QUATERNION newquat) {startquat = newquat;}
 	QUATERNION GetStartOrientation() {return startquat;}
 	

@@ -411,11 +411,19 @@ void TRACK::Write(string trackname)
 	ofstream trackfile;
 	trackfile.open((settings.GetDataDir() + "/tracks/" + trackname + "/roads.trk").c_str());
 	
-	VERTEX sl = GetStart();
 	//trackfile << sl.x << " " << sl.y << " " << sl.z << endl << endl;
 	CONFIGFILE trackconfig;
 	trackconfig.Load((settings.GetDataDir() + "/tracks/" + trackname + "/track.txt").c_str());
-	trackconfig.SetParam("start position", sl.v3());
+
+	unsigned int index = 0;
+	std::vector<VERTEX>::iterator sl_it;
+	for (sl_it = startloc.begin(); sl_it != startloc.end(); sl_it++)
+	{
+		std::stringstream s;
+		s<<"start position "<<index;
+		trackconfig.SetParam(s.str(), (*sl_it).v3());
+		index++;
+	}
 	QUATERNION so = GetStartOrientation();
 	VERTEX sov;
 	sov.x = so.x;
@@ -476,9 +484,31 @@ void TRACK::Load(string trackname)
 	trackconfig.Load((settings.GetDataDir() + "/tracks/" + trackname + "/track.txt").c_str());
 	float tvert[3];
 	VERTEX sl;
-	trackconfig.GetParam("start position", tvert);
-	sl.Set(tvert);
-	SetStart(sl);
+        int index = 0;
+        bool end_of_position = false;
+        startloc.clear();
+        trackconfig.SuppressError(true); //suppress error message
+        while (!end_of_position)
+        {
+                std::stringstream s;
+                s<<"start position "<<index;
+                if (trackconfig.GetParam(s.str(), tvert))
+                {
+                        sl.Set(tvert);
+                        SetStart(sl);
+                        index++;
+                }
+                else end_of_position = true;
+        }
+        trackconfig.SuppressError(false); //turn error message back on
+
+        if (index == 0) //still using the old format
+        {
+		trackconfig.GetParam("start position", tvert);
+                sl.Set(tvert);
+                SetStart(sl);
+        }
+
 	VERTEX sov;
 	trackconfig.GetParam("start orientation-xyz", tvert);
 	sov.Set(tvert);

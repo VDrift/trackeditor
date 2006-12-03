@@ -603,6 +603,10 @@ void handleKeyPress( SDL_keysym *keysym )
 			track.SetStartOrientation(cam.dir.ReturnConjugate());
 			break;
 		
+		case 'k':
+			track.RemoveStart();
+			break;
+		
 		case 'r':
 			//mq1.AddMessage("Saved to file");
 			tvec1.zero();
@@ -1574,6 +1578,7 @@ int drawGLScene( GLvoid )
 	"Page Up\n"
 	"A, F\n"
 	"L\n"
+	"K\n"
 	"N\n"
 	"R\n"
 	"S\n"
@@ -1588,7 +1593,8 @@ int drawGLScene( GLvoid )
 	"Move around\n"
 	"Move forward very fast\n"
 	"Automatically try to create the next bezier patch on this road (F: 25 at a time)\n"
-	"Set the car start location to the current camera position\n"
+	"Add the current camera position to the list of car start locations\n"
+	"Remove the last start location from the list\n"
 	"Create a new road (the new road is created once you add patches to it)\n"
 	"Select the road under the cursor\n"
 	"Save the track\n"
