@@ -504,9 +504,11 @@ void TRACK::Load(string trackname)
 
         if (index == 0) //still using the old format
         {
-		trackconfig.GetParam("start position", tvert);
-                sl.Set(tvert);
-                SetStart(sl);
+		if (trackconfig.GetParam("start position", tvert))
+		{
+                	sl.Set(tvert);
+                	SetStart(sl);
+		}
         }
 
 	VERTEX sov;
