@@ -605,6 +605,7 @@ void handleKeyPress( SDL_keysym *keysym )
 		
 		case 'k':
 			track.RemoveStart();
+			track.RemoveStartOrientation();
 			break;
 		
 		case 'r':

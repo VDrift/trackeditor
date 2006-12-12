@@ -83,7 +83,7 @@ private:
 	ROADSTRIPNODE * roads;
 	int NumRoads();
 	std::vector<VERTEX> startloc;
-	QUATERNION startquat;
+	std::vector<QUATERNION> startquat;
 	vector <LAPAREA> lapsequence;
 	
 public:
@@ -99,8 +99,9 @@ public:
 	void SetStart(VERTEX newloc) {startloc.push_back(newloc);}
 	void RemoveStart() {if (startloc.size() > 0) startloc.pop_back();}
 	VERTEX GetStart(unsigned int i) {return (i>=startloc.size())?startloc[0]:startloc[i];}
-	void SetStartOrientation(QUATERNION newquat) {startquat = newquat;}
-	QUATERNION GetStartOrientation() {return startquat;}
+	void SetStartOrientation(QUATERNION newquat) {startquat.push_back(newquat);}
+	QUATERNION GetStartOrientation(unsigned int i) {return (i>=startquat.size())?startquat[0]:startquat[i];}
+	void RemoveStartOrientation() {if (startquat.size() > 0) startquat.pop_back();}
 	
 	void ClearLapSequence() {lapsequence.clear();}
 	void AddLapSequence(BEZIER * patch);
