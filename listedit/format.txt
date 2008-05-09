@@ -9,7 +9,9 @@
 #2. mipmap texture (1 for true, 0 for false)
 #3. disable lighting (1 for true, 0 for false)
 #4. is this a skybox? (1 for true, 0 for false)
-#5. is this object a transparent blended texture? (1 for true, 0 for false)
+#5. transparent blended texture? (1 if true)
+    double sided texture (2 if true)
+    0 otherwise
 #6. bump wavelength
 #7. bump amplitude
 #8. driveable (1 for true, 0 for false) -> deprecated, use collide-able flag
