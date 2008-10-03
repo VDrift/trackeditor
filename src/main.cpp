@@ -952,7 +952,7 @@ bool InitGameData()
 }
 
 /* general OpenGL initialization function */
-int initGL( GLvoid )
+int initGL()
 {
 	//warning:  this must be done BEFORE anything important
 	//or else it will override it
@@ -1055,7 +1055,7 @@ void LoadingScreen(string loadtext)
 }
 
 /* Here goes our drawing code */
-int drawGLScene( GLvoid )
+int drawGLScene()
 {
 	#ifdef PERFORMANCE_PROFILE
 	suseconds_t t1, t2;
