@@ -23,6 +23,7 @@
  */
  
 #include "configfile.h"
+#include <cstdlib>
 
 CONFIGFILE::CONFIGFILE()
 {
