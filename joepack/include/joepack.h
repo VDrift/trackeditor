@@ -1,8 +1,9 @@
 #ifndef _JOEPACK_H
 #define _JOEPACK_H
 
-#include <stdio.h>			// Header File For Standard Input/Output
+#include <cstdio>
 #include <string>
+#include <cstring>
 #include <iostream>
 #include <fstream>
 #include <cmath>
