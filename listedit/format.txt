@@ -1,3 +1,6 @@
+For the latest definition, see http://wiki.vdrift.net/Track_files_and_formats#objects.2Flist.txt
+
+
 #vdrift object list file format v0.5
 
 #how many parameters per entry

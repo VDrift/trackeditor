@@ -601,11 +601,13 @@ void handleKeyPress( SDL_keysym *keysym )
 		case 'l':
 			track.SetStart(cam.position.ScaleR(-1));
 			track.SetStartOrientation(cam.dir.ReturnConjugate());
+			mq1.AddMessage("Added start location");
 			break;
 		
 		case 'k':
 			track.RemoveStart();
 			track.RemoveStartOrientation();
+			mq1.AddMessage("Removed start location");
 			break;
 		
 		case 'r':
@@ -631,8 +633,8 @@ void handleKeyPress( SDL_keysym *keysym )
 					bl = lastbez->points[3][0];
 					br = lastbez->points[3][3];
 					
-					l = objects.AutoFindClosestVert(fl, (fl-bl), tvec1);
-					r = objects.AutoFindClosestVert(fr, (fr-br), tvec2);
+					l = objects.AutoFindClosestVert(fl, fr, (fl-bl), tvec1);
+					r = objects.AutoFindClosestVert(fr, fl, (fr-br), tvec2);
 					
 					if (l && r)
 					{
@@ -675,8 +677,8 @@ void handleKeyPress( SDL_keysym *keysym )
 						bl = lastbez->points[3][0];
 						br = lastbez->points[3][3];
 						
-						l = objects.AutoFindClosestVert(fl, (fl-bl), tvec1);
-						r = objects.AutoFindClosestVert(fr, (fr-br), tvec2);
+						l = objects.AutoFindClosestVert(fl, fr, (fl-bl), tvec1);
+						r = objects.AutoFindClosestVert(fr, fl, (fr-br), tvec2);
 						
 						if (l && r)
 						{

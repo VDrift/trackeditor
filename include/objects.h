@@ -77,7 +77,7 @@ public:
 
 	bool FindClosestVert(VERTEX orig, VERTEX dir, VERTEX &out);
 	bool FindClosestVert(VERTEX orig, VERTEX dir, VERTEX &out, string & obj);
-	bool AutoFindClosestVert(VERTEX orig, VERTEX dir, VERTEX &out);
+	bool AutoFindClosestVert(VERTEX orig1, VERTEX orig2, VERTEX dir, VERTEX &out);
 
 	void LoadObjectsFromFolder(string objectpath);
 };
