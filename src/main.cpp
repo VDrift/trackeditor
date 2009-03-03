@@ -759,7 +759,7 @@ void handleKeyPress( SDL_keysym *keysym )
 			break;
 			
 		case '4':
-			mq1.AddMessage("Four-vertex selection mode isn't supported yet");
+			mq1.AddMessage("Four-vertex selection mode");
 			vertmode = FOURVERTS;
 			break;
 		
