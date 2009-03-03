@@ -83,7 +83,7 @@ int SCREEN_BPP = 32;
 struct EDITORDATA
 {
 	GLuint cursortex;
-	VERTEX bezinput[4];
+	VERTEX bezinput[8];
 	int numbezinput;
 	bool mousebounce[5];
 	string activetrack;
@@ -145,6 +145,12 @@ OBJECTS objects;
 
 TRACK track;
 ROADSTRIP * activestrip;
+
+enum VERTMODE
+{
+	TWOVERTS,
+ 	FOURVERTS
+} vertmode = TWOVERTS;
 
 //VAMOSWORLD world;
 //Vamos_Track::Strip_Track *road;
@@ -553,7 +559,9 @@ void handleKeyPress( SDL_keysym *keysym )
 						if (lastbez != NULL)
 						{
 							editordata.bezinput[0] = lastbez->points[0][0];
-							editordata.bezinput[1] = lastbez->points[0][3];
+							editordata.bezinput[1] = lastbez->points[0][1];
+							editordata.bezinput[2] = lastbez->points[0][2];
+							editordata.bezinput[3] = lastbez->points[0][3];
 						}
 						else
 							editordata.numbezinput = 0;
@@ -626,7 +634,7 @@ void handleKeyPress( SDL_keysym *keysym )
 			if (activestrip != NULL)
 			{
 				lastbez = activestrip->GetLastPatch();
-				if (lastbez != NULL && editordata.numbezinput == 2)
+				if (lastbez != NULL && editordata.numbezinput == 4)
 				{
 					fl = lastbez->points[0][0];
 					fr = lastbez->points[0][3];
@@ -638,14 +646,20 @@ void handleKeyPress( SDL_keysym *keysym )
 					
 					if (l && r)
 					{
-						patch.SetFromCorners(tvec1, tvec2, editordata.bezinput[0], editordata.bezinput[1]);
+						patch.SetFromCorners(tvec1, tvec2, editordata.bezinput[0], editordata.bezinput[3]);
 						activestrip->Add(patch);
 						
 						//editordata.numbezinput = 0;
-						editordata.numbezinput = 2;
+						editordata.numbezinput = 4;
 						
-						editordata.bezinput[0] = tvec1;
-						editordata.bezinput[1] = tvec2;
+						//editordata.bezinput[0] = tvec1;
+						//editordata.bezinput[3] = tvec2;
+						
+						editordata.bezinput[0] = patch.points[0][0];
+						editordata.bezinput[1] = patch.points[0][1];
+						editordata.bezinput[2] = patch.points[0][2];
+						editordata.bezinput[3] = patch.points[0][3];
+						
 						mq1.AddMessage("Auto-traced road");
 					}
 					else
@@ -670,7 +684,7 @@ void handleKeyPress( SDL_keysym *keysym )
 				if (activestrip != NULL)
 				{
 					lastbez = activestrip->GetLastPatch();
-					if (lastbez != NULL && editordata.numbezinput == 2)
+					if (lastbez != NULL && editordata.numbezinput == 4)
 					{
 						fl = lastbez->points[0][0];
 						fr = lastbez->points[0][3];
@@ -682,14 +696,16 @@ void handleKeyPress( SDL_keysym *keysym )
 						
 						if (l && r)
 						{
-							patch.SetFromCorners(tvec1, tvec2, editordata.bezinput[0], editordata.bezinput[1]);
+							patch.SetFromCorners(tvec1, tvec2, editordata.bezinput[0], editordata.bezinput[3]);
 							activestrip->Add(patch);
 							
 							//editordata.numbezinput = 0;
-							editordata.numbezinput = 2;
+							editordata.numbezinput = 4;
 							
-							editordata.bezinput[0] = tvec1;
-							editordata.bezinput[1] = tvec2;
+							editordata.bezinput[0] = patch.points[0][0];
+							editordata.bezinput[1] = patch.points[0][1];
+							editordata.bezinput[2] = patch.points[0][2];
+							editordata.bezinput[3] = patch.points[0][3];
 							mq1.AddMessage("Auto-traced road");
 						}
 						else
@@ -735,6 +751,16 @@ void handleKeyPress( SDL_keysym *keysym )
 			{
 				track.AddLapSequence(colbez);
 			}
+			break;
+			
+		case '2':
+			mq1.AddMessage("Two-vertex selection mode");
+			vertmode = TWOVERTS;
+			break;
+			
+		case '4':
+			mq1.AddMessage("Four-vertex selection mode isn't supported yet");
+			vertmode = FOURVERTS;
 			break;
 		
 		//case SDLK_F11:
@@ -1350,16 +1376,45 @@ int drawGLScene()
 			glPopAttrib();
 		}
 		
+		//left click
 		if (highlightedvert && mouse.ButtonDown(1) && !editordata.mousebounce[1])
 		{
-			//left click on a highlighted vert
-			editordata.numbezinput++;
+			int oldnumbezinput = editordata.numbezinput;
 			
-			if (editordata.numbezinput >= 4)
+			//left click on a highlighted vert
+			if (vertmode == TWOVERTS)
+			{
+				if (editordata.numbezinput == 0)
+					editordata.numbezinput = 3;
+				else if (editordata.numbezinput <= 3)
+					editordata.numbezinput = 4;
+				else if (editordata.numbezinput <= 4)
+					editordata.numbezinput = 7;
+				else if (editordata.numbezinput <= 7)
+					editordata.numbezinput = 8;
+			}
+			else
+				editordata.numbezinput++;
+			
+			if (editordata.numbezinput >= 8)
 			{
 				//create bezier patch
 				BEZIER patch;
-				patch.SetFromCorners(editordata.bezinput[2], selvert, editordata.bezinput[0], editordata.bezinput[1]);
+				
+				if (vertmode == TWOVERTS)
+					patch.SetFromCorners(editordata.bezinput[4], selvert, editordata.bezinput[0], editordata.bezinput[3]);
+				else
+				{
+					//copy the front and back selected rows to the patch, then tell it to do the math to find the other points
+					// plus center and radius calculations
+					editordata.bezinput[7] = selvert;
+					for (int i = 0; i < 4; i++)
+						patch.points[3][i] = editordata.bezinput[i];
+					for (int i = 0; i < 4; i++)
+						patch.points[0][i] = editordata.bezinput[i+4];
+					patch.CalculateMiddleRows();
+				}
+				
 				if (activestrip == NULL)
 				{
 					activestrip = track.AddNewRoad();
@@ -1369,14 +1424,16 @@ int drawGLScene()
 				activestrip->Add(patch);
 				
 				//editordata.numbezinput = 0;
-				editordata.numbezinput = 2;
+				editordata.numbezinput = 4;
 				
-				editordata.bezinput[0] = editordata.bezinput[2];
-				editordata.bezinput[1] = selvert;
+				editordata.bezinput[0] = patch.points[0][0];
+				editordata.bezinput[1] = patch.points[0][1];
+				editordata.bezinput[2] = patch.points[0][2];
+				editordata.bezinput[3] = patch.points[0][3];
 			}
 			else
 			{
-				editordata.bezinput[editordata.numbezinput-1] = selvert;
+				editordata.bezinput[oldnumbezinput] = selvert;
 			}
 		}
 		
@@ -1390,7 +1447,12 @@ int drawGLScene()
 		glColor4f(1,0,0,1);
 		glBegin(GL_POINTS);
 		for (i = 0; i < editordata.numbezinput; i++)
-			glVertex3fv(editordata.bezinput[i].v3());
+		{
+			if (vertmode != TWOVERTS || i == 0 || i == 3 || i == 4 || i == 7)
+			{
+				glVertex3fv(editordata.bezinput[i].v3());
+			}
+		}
 		glEnd();
 		glColor4f(1,1,1,1);
 		glPopAttrib();
@@ -1588,6 +1650,7 @@ int drawGLScene()
 	"I\n"
 	"E\n"
 	"- (minus)\n"
+	"2, 4\n"
 	"BACKSPACE\n"
 	"ESCAPE\n"
 	, 1, 5, 1.0);
@@ -1604,6 +1667,7 @@ int drawGLScene()
 	"Print the object that owns the selected vertex to the console\n"
 	"Mark a road segment as part of a lap sequence\n"
 	"Clear all lap sequences\n"
+	"Select vertices 2 at a time, 4 at a time\n"
 	"Delete the last bezier patch on this road\n"
 	"Quit the editor\n"
 	, 1, 5, 1.0);

@@ -35,7 +35,7 @@ class BEZIER
 {
 private:
 	void DrawSurf(int div, float trans);
-	void DrawControlPoints();
+	void DrawControlPoints(float r, float g, float b, float a);
 	VERTEX Bernstein(float u, VERTEX *p);
 	VERTEX SurfCoord(float px, float py);
 
@@ -43,6 +43,7 @@ public:
 	BEZIER();
 	~BEZIER();
 	void SetFromCorners(VERTEX fl, VERTEX fr, VERTEX bl, VERTEX br);
+	void CalculateMiddleRows();
 	void Visualize(bool wireframe, bool fill, VERTEX color);
 	void Attach(BEZIER & other);
 
@@ -54,7 +55,7 @@ public:
 	void CopyFrom(BEZIER &other);
 	
 	bool ReadFrom(ifstream &openfile);
-	bool WriteTo(ofstream &openfile);
+	bool WriteTo(ostream &openfile);
 
 	VERTEX points[4][4];
 	

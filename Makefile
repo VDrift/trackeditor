@@ -1,4 +1,4 @@
 project_name:
-	scons
+	scons -j 3
 clean:
 	scons --clean

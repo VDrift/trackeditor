@@ -24,6 +24,8 @@
  
 #include "bezier.h"
 
+#include <algorithm>
+
 BEZIER::BEZIER()
 {
 	int x,y;
@@ -53,21 +55,24 @@ void BEZIER::SetFromCorners(VERTEX fl, VERTEX fr, VERTEX bl, VERTEX br)
 	points[3][0] = bl;
 	
 	//calculate intermediate front and back points
-	
 	temp = fr - fl;
 	points[0][1] = fl + temp.normalize().ScaleR(temp.len()/3.0);
 	points[0][2] = fl + temp.normalize().ScaleR(2.0*temp.len()/3.0);
-	
 	temp = br - bl;
 	points[3][1] = bl + temp.normalize().ScaleR(temp.len()/3.0);
 	points[3][2] = bl + temp.normalize().ScaleR(2.0*temp.len()/3.0);
 	
-	
 	//calculate intermediate left and right points	
-	int i;
-	for (i = 0; i < 4; i++)
+	CalculateMiddleRows();
+	
+	GenerateCenterAndRadius();
+}
+
+void BEZIER::CalculateMiddleRows()
+{
+	for (int i = 0; i < 4; i++)
 	{
-		temp = points[3][i] - points[0][i];
+		VERTEX temp = points[3][i] - points[0][i];
 		points[1][i] = points[0][i] + temp.normalize().ScaleR(temp.len()/3.0);
 		points[2][i] = points[0][i] + temp.normalize().ScaleR(2.0*temp.len()/3.0);
 	}
@@ -106,14 +111,13 @@ void BEZIER::Visualize(bool wireframe, bool fill, VERTEX color)
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
 		//glColor4f(.5,.6,.5,0.1);
-		glColor4f(color.x, color.y, color.z,0.5);
-		DrawControlPoints();
+		DrawControlPoints(color.x, color.y, color.z,0.5);
 		
-		glEnable(GL_DEPTH_TEST);
+		/*glEnable(GL_DEPTH_TEST);
 		glDisable(GL_BLEND);
 		glLineWidth(2.0);
-		glColor4f(color.x, color.y, color.z,1);
-		DrawControlPoints();
+		//glColor4f(color.x, color.y, color.z,1);
+		DrawControlPoints(color.x, color.y, color.z,1);*/
 	}
 	
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
@@ -173,7 +177,7 @@ void BEZIER::DrawSurf(int div, float trans)
 	glEnd();
 }
 
-void BEZIER::DrawControlPoints()
+void BEZIER::DrawControlPoints(float r, float g, float b, float a)
 {
 	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
@@ -193,15 +197,29 @@ void BEZIER::DrawControlPoints()
 
 	glEnd();*/
 	
-	//glColor4f(0,1,0,1);
+	float modamount = 0.0;
+	glColor4f(r-modamount,g-modamount,b-modamount,0.1);
 	
 	glBegin(GL_QUADS);
+	for (int x = 0; x < 3; x++)
+	{
+		for (int y = 0; y < 3; y++)
+		{
+			glVertex3fv(points[x][y].v3());
+			glVertex3fv(points[x+1][y].v3());
+			glVertex3fv(points[x+1][y+1].v3());
+			glVertex3fv(points[x][y+1].v3());
+		}
+	}
+	glEnd();
 	
+	glColor4f(r,g,b,a);
+	
+	glBegin(GL_QUADS);
 	glVertex3fv(points[0][0].v3());
 	glVertex3fv(points[3][0].v3());
 	glVertex3fv(points[3][3].v3());
 	glVertex3fv(points[0][3].v3());
-
 	glEnd();
 	
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
@@ -209,19 +227,17 @@ void BEZIER::DrawControlPoints()
 
 void BEZIER::Attach(BEZIER & other)
 {
-	int x;
-	
 	//move the other patch to the location of this patch
 	/*for (x = 0; x < 4; x++)
 		points[0][x] = other.points[3][x];*/
 	
 	//move the other patch to the location of this patch and force its
 	// intermediate points into a nice grid layout
-	other.SetFromCorners(other.points[0][0], other.points[0][3], points[0][0], points[0][3]);
+	//other.SetFromCorners(other.points[0][0], other.points[0][3], points[0][0], points[0][3]);
 	
 	VERTEX slope;
 	
-	for (x = 0; x < 4; x++)
+	for (int x = 0; x < 4; x++)
 	{
 		//slope points in the forward direction
 		slope = (other.points[0][x] - points[3][x]).normalize();
@@ -229,7 +245,8 @@ void BEZIER::Attach(BEZIER & other)
 		float otherlen = (other.points[0][x] - other.points[3][x]).len();
 		float mylen = (points[0][x] - points[3][x]).len();
 		
-		float meanlen = (otherlen + mylen)/2.0;
+		//float meanlen = (otherlen + mylen)/2.0;
+		float meanlen = std::min(otherlen, mylen);
 		float leglen = meanlen / 3.0;
 		
 		other.points[2][x] = other.points[3][x] + slope.ScaleR(leglen);
@@ -370,6 +387,9 @@ void BEZIER::CopyFrom(BEZIER &other)
 			points[x][y] = other.points[x][y];
 		}
 	}
+	
+	center = other.center;
+	radius = other.radius;
 }
 
 bool BEZIER::ReadFrom(ifstream &openfile)
@@ -392,7 +412,7 @@ bool BEZIER::ReadFrom(ifstream &openfile)
 	return true;
 }
 
-bool BEZIER::WriteTo(ofstream &openfile)
+bool BEZIER::WriteTo(ostream &openfile)
 {
 	int x, y;
 	
