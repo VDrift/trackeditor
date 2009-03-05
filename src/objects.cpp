@@ -494,7 +494,7 @@ bool OBJECTS::AutoFindClosestVert(VERTEX orig1, VERTEX orig2, VERTEX dir, VERTEX
 			}
 		}
 		
-		if (inobj1 && inobj2)
+		if (inobj1 || inobj2)
 		{
 			//find faces within the object that are attached to the currently selected verts
 			for (i = 0; i < curpos->model->jmodel.GetFaces(); i++)
@@ -530,7 +530,10 @@ bool OBJECTS::AutoFindClosestVert(VERTEX orig1, VERTEX orig2, VERTEX dir, VERTEX
 						tvert.Set(curpos->model->jmodel.GetVertArray(0)[vi].vertex);
 						tvert.z = -tvert.z;
 						tvert = tvert + curpos->pos;
-						candidates.push_back(tvert);
+						if (inobj1 && inobj2)
+							candidatesbetter.push_back(tvert);
+						else
+							candidates.push_back(tvert);
 					}
 				}
 			}

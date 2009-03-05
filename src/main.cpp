@@ -149,6 +149,7 @@ ROADSTRIP * activestrip;
 enum VERTMODE
 {
 	TWOVERTS,
+ 	THREEVERTS,
  	FOURVERTS
 } vertmode = TWOVERTS;
 
@@ -485,6 +486,98 @@ void MainUnpause()
 	unpauserequest = true;
 }
 
+void AutoTrace()
+{
+	if (activestrip != NULL)
+	{
+		BEZIER * lastbez = activestrip->GetLastPatch();
+		if (lastbez != NULL && editordata.numbezinput == 4)
+		{
+			VERTEX tvec[4];
+			/*VERTEX fl = lastbez->points[0][0];
+			VERTEX fr = lastbez->points[0][3];
+			VERTEX bl = lastbez->points[3][0];
+			VERTEX br = lastbez->points[3][3];*/
+			
+			bool success(true);
+			BEZIER patch;
+			if (vertmode == TWOVERTS)
+			{
+				success = success && objects.AutoFindClosestVert(lastbez->points[0][0], lastbez->points[0][3], (lastbez->points[0][0]-lastbez->points[3][0]), tvec[0]);
+				success = success && objects.AutoFindClosestVert(lastbez->points[0][3], lastbez->points[0][0], (lastbez->points[0][3]-lastbez->points[3][3]), tvec[1]);
+				
+				if (success)
+				{
+					patch.SetFromCorners(tvec[0], tvec[1], editordata.bezinput[0], editordata.bezinput[3]);
+				}
+			}
+			else if (vertmode == THREEVERTS)
+			{
+				success = success && objects.AutoFindClosestVert(lastbez->points[0][0], lastbez->points[0][1], (lastbez->points[0][0]-lastbez->points[3][0]), tvec[0]);
+				success = success && objects.AutoFindClosestVert(lastbez->points[0][1], lastbez->points[0][3], (lastbez->points[0][1]-lastbez->points[3][1]), tvec[1]);
+				tvec[2] = tvec[1];
+				success = success && objects.AutoFindClosestVert(lastbez->points[0][3], lastbez->points[0][1], (lastbez->points[0][3]-lastbez->points[3][3]), tvec[3]);
+				
+				if (success)
+				{
+					for (int i = 0; i < 4; i++)
+						patch.points[3][i] = editordata.bezinput[i];
+					for (int i = 0; i < 4; i++)
+						patch.points[0][i] = tvec[i];
+					patch.CalculateMiddleRows();
+				}
+			}
+			else if (vertmode == FOURVERTS)
+			{
+				for (int i = 0; i < 4; i++)
+				{
+					int nextvert = i + 1;
+					if (nextvert >= 4)
+						nextvert = 2;
+					success = success && objects.AutoFindClosestVert(lastbez->points[0][i], lastbez->points[0][nextvert], (lastbez->points[0][i]-lastbez->points[3][i]), tvec[i]);
+				}
+				
+				if (success)
+				{
+					for (int i = 0; i < 4; i++)
+						patch.points[3][i] = editordata.bezinput[i];
+					for (int i = 0; i < 4; i++)
+						patch.points[0][i] = tvec[i];
+					patch.CalculateMiddleRows();
+				}
+			}
+			else
+				assert(0);
+			
+			if (success)
+			{
+				activestrip->Add(patch);
+				
+				editordata.numbezinput = 4;
+				
+				editordata.bezinput[0] = patch.points[0][0];
+				editordata.bezinput[1] = patch.points[0][1];
+				editordata.bezinput[2] = patch.points[0][2];
+				editordata.bezinput[3] = patch.points[0][3];
+				
+				mq1.AddMessage("Auto-traced road");
+			}
+			else
+			{
+				mq1.AddMessage("Can't auto-trace road: found no candidate points");
+			}
+		}
+		else
+		{
+			mq1.AddMessage("Can't auto-trace road: must start road first");
+		}
+	}
+	else
+	{
+		mq1.AddMessage("Can't auto-trace road: no roads selected");
+	}
+}
+
 /* function to handle key press events */
 void handleKeyPress( SDL_keysym *keysym )
 {
@@ -494,7 +587,7 @@ void handleKeyPress( SDL_keysym *keysym )
 	BEZIER * colbez;
 	ROADSTRIP * tempstrip;
 	BEZIER patch;
-	bool l, r;
+	bool l;
 	int i;
 	string tstr;
 	
@@ -631,97 +724,13 @@ void handleKeyPress( SDL_keysym *keysym )
 			break;
 		
 		case 'a':
-			if (activestrip != NULL)
-			{
-				lastbez = activestrip->GetLastPatch();
-				if (lastbez != NULL && editordata.numbezinput == 4)
-				{
-					fl = lastbez->points[0][0];
-					fr = lastbez->points[0][3];
-					bl = lastbez->points[3][0];
-					br = lastbez->points[3][3];
-					
-					l = objects.AutoFindClosestVert(fl, fr, (fl-bl), tvec1);
-					r = objects.AutoFindClosestVert(fr, fl, (fr-br), tvec2);
-					
-					if (l && r)
-					{
-						patch.SetFromCorners(tvec1, tvec2, editordata.bezinput[0], editordata.bezinput[3]);
-						activestrip->Add(patch);
-						
-						//editordata.numbezinput = 0;
-						editordata.numbezinput = 4;
-						
-						//editordata.bezinput[0] = tvec1;
-						//editordata.bezinput[3] = tvec2;
-						
-						editordata.bezinput[0] = patch.points[0][0];
-						editordata.bezinput[1] = patch.points[0][1];
-						editordata.bezinput[2] = patch.points[0][2];
-						editordata.bezinput[3] = patch.points[0][3];
-						
-						mq1.AddMessage("Auto-traced road");
-					}
-					else
-					{
-						mq1.AddMessage("Can't auto-trace road: found no candidate points");
-					}
-				}
-				else
-				{
-					mq1.AddMessage("Can't auto-trace road: must start road first");
-				}
-			}
-			else
-			{
-				mq1.AddMessage("Can't auto-trace road: no roads selected");
-			}
+			AutoTrace();
 			break;
 			
 		case 'f':
 			for (i = 0; i < 25; i++)
 			{
-				if (activestrip != NULL)
-				{
-					lastbez = activestrip->GetLastPatch();
-					if (lastbez != NULL && editordata.numbezinput == 4)
-					{
-						fl = lastbez->points[0][0];
-						fr = lastbez->points[0][3];
-						bl = lastbez->points[3][0];
-						br = lastbez->points[3][3];
-						
-						l = objects.AutoFindClosestVert(fl, fr, (fl-bl), tvec1);
-						r = objects.AutoFindClosestVert(fr, fl, (fr-br), tvec2);
-						
-						if (l && r)
-						{
-							patch.SetFromCorners(tvec1, tvec2, editordata.bezinput[0], editordata.bezinput[3]);
-							activestrip->Add(patch);
-							
-							//editordata.numbezinput = 0;
-							editordata.numbezinput = 4;
-							
-							editordata.bezinput[0] = patch.points[0][0];
-							editordata.bezinput[1] = patch.points[0][1];
-							editordata.bezinput[2] = patch.points[0][2];
-							editordata.bezinput[3] = patch.points[0][3];
-							mq1.AddMessage("Auto-traced road");
-						}
-						else
-						{
-							mq1.AddMessage("Can't auto-trace road: found no candidate points");
-						}
-					}
-					else
-					{
-						mq1.AddMessage("Can't auto-trace road: must start road first");
-					}
-				}
-				else
-				{
-					mq1.AddMessage("Can't auto-trace road: no roads selected");
-				}
+				AutoTrace();
 			}
 			break;
 		
@@ -756,6 +765,11 @@ void handleKeyPress( SDL_keysym *keysym )
 		case '2':
 			mq1.AddMessage("Two-vertex selection mode");
 			vertmode = TWOVERTS;
+			break;
+			
+		case '3':
+			mq1.AddMessage("Three-vertex selection mode");
+			vertmode = THREEVERTS;
 			break;
 			
 		case '4':
@@ -1394,7 +1408,11 @@ int drawGLScene()
 					editordata.numbezinput = 8;
 			}
 			else
+			{
 				editordata.numbezinput++;
+				if (vertmode == THREEVERTS && (editordata.numbezinput == 2 || editordata.numbezinput == 6))
+					editordata.numbezinput++;
+			}
 			
 			if (editordata.numbezinput >= 8)
 			{
@@ -1407,11 +1425,29 @@ int drawGLScene()
 				{
 					//copy the front and back selected rows to the patch, then tell it to do the math to find the other points
 					// plus center and radius calculations
+					
 					editordata.bezinput[7] = selvert;
+					
 					for (int i = 0; i < 4; i++)
 						patch.points[3][i] = editordata.bezinput[i];
 					for (int i = 0; i < 4; i++)
 						patch.points[0][i] = editordata.bezinput[i+4];
+					
+					/*if (vertmode == THREEVERTS)
+					{
+						//recalculate the middle two verts
+						for (int i = 0; i < 4; i += 3)
+						{
+							if ((patch.points[i][1] - patch.points[i][2]).len() < 0.0001)
+							{
+								VERTEX leftslope = patch.points[i][1] - patch.points[i][0];
+								VERTEX rightslope = patch.points[i][2] - patch.points[i][3];
+								patch.points[i][1] = patch.points[i][0] + leftslope.ScaleR(0.5);
+								patch.points[i][2] = patch.points[i][3] + rightslope.ScaleR(0.5);
+							}
+						}
+					}*/
+					
 					patch.CalculateMiddleRows();
 				}
 				
@@ -1434,6 +1470,8 @@ int drawGLScene()
 			else
 			{
 				editordata.bezinput[oldnumbezinput] = selvert;
+				if (vertmode == THREEVERTS && (oldnumbezinput == 1 || oldnumbezinput == 5))
+					editordata.bezinput[oldnumbezinput+1] = selvert;
 			}
 		}
 		
@@ -1650,7 +1688,7 @@ int drawGLScene()
 	"I\n"
 	"E\n"
 	"- (minus)\n"
-	"2, 4\n"
+	"2, 3, 4\n"
 	"BACKSPACE\n"
 	"ESCAPE\n"
 	, 1, 5, 1.0);
@@ -1667,7 +1705,7 @@ int drawGLScene()
 	"Print the object that owns the selected vertex to the console\n"
 	"Mark a road segment as part of a lap sequence\n"
 	"Clear all lap sequences\n"
-	"Select vertices 2 at a time, 4 at a time\n"
+	"Select vertices 2 at a time, 3 at a time, 4 at a time\n"
 	"Delete the last bezier patch on this road\n"
 	"Quit the editor\n"
 	, 1, 5, 1.0);

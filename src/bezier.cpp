@@ -111,13 +111,13 @@ void BEZIER::Visualize(bool wireframe, bool fill, VERTEX color)
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
 		//glColor4f(.5,.6,.5,0.1);
-		DrawControlPoints(color.x, color.y, color.z,0.5);
+		DrawControlPoints(color.x, color.y, color.z, 0.5);
 		
 		/*glEnable(GL_DEPTH_TEST);
 		glDisable(GL_BLEND);
 		glLineWidth(2.0);
 		//glColor4f(color.x, color.y, color.z,1);
-		DrawControlPoints(color.x, color.y, color.z,1);*/
+		DrawControlPoints(color.x, color.y, color.z, 1);*/
 	}
 	
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
@@ -197,7 +197,7 @@ void BEZIER::DrawControlPoints(float r, float g, float b, float a)
 
 	glEnd();*/
 	
-	float modamount = 0.0;
+	/*float modamount = 0.0;
 	glColor4f(r-modamount,g-modamount,b-modamount,0.1);
 	
 	glBegin(GL_QUADS);
@@ -220,7 +220,26 @@ void BEZIER::DrawControlPoints(float r, float g, float b, float a)
 	glVertex3fv(points[3][0].v3());
 	glVertex3fv(points[3][3].v3());
 	glVertex3fv(points[0][3].v3());
+	glEnd();*/
+	
+	glColor4f(r,g,b,a);
+	glBegin(GL_QUADS);
+	for (int x = 0; x < 3; x++)
+	{
+		glVertex3fv(points[0][x].v3());
+		glVertex3fv(points[3][x].v3());
+		glVertex3fv(points[3][x+1].v3());
+		glVertex3fv(points[0][x+1].v3());
+	}
 	glEnd();
+	
+	/*glColor4f(r,g,b,a);
+	glBegin(GL_QUADS);
+	glVertex3fv(points[0][0].v3());
+	glVertex3fv(points[3][0].v3());
+	glVertex3fv(points[3][3].v3());
+	glVertex3fv(points[0][3].v3());
+	glEnd();*/
 	
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }
