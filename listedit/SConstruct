@@ -1,4 +1,8 @@
+import os, sys
+
 env = Environment(CPPPATH='include')
 #env.Append(LIBS = ['GL', 'GLU', 'SDL_image'])
+if ( 'win32' == sys.platform or 'cygwin' == sys.platform ):
+	env.Append(LIBS = [ 'iberty'] )
 list = Split("""src/listedit.cpp""")
 env.Program('listedit', list)

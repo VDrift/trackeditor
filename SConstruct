@@ -1,4 +1,4 @@
-import os, errno, SCons
+import os, sys, errno, SCons
 from time import gmtime, strftime
 
 #---------------#

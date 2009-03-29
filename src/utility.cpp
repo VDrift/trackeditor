@@ -24,22 +24,23 @@
 
 #define GL_GLEXT_PROTOTYPES
 
-#include "utility.h"
-
 #ifdef _WIN32
 //#define GL_GLEXT_PROTOTYPES
-#include <GL/glext.h>
-#include <GL/glut.h>
+//#include <GL/glext.h>
+//#include <GL/glut.h>
 //#include <GL/wglext.h>
 //#include <GL/glprocs.h>
+#include <GL/glew.h>
 #endif
 
-#ifdef _WIN32
+#include "utility.h"
+
+/*#ifdef _WIN32
 PFNGLMULTITEXCOORD2FARBPROC     pglMultiTexCoord2f     = NULL;
 PFNGLMULTITEXCOORD4FARBPROC     pglMultiTexCoord4f     = NULL;
 PFNGLCLIENTACTIVETEXTUREARBPROC	pglActiveTexture       = NULL;
 PFNGLACTIVETEXTUREARBPROC       pglClientActiveTexture = NULL;
-#endif
+#endif*/
 
 void UTILITY::SelectTU(int TU)
 {
@@ -63,7 +64,8 @@ void UTILITY::SelectTU(int TU)
 		tuenum = GL_TEXTURE0_ARB;
 	
 	#ifdef _WIN32
-	pglActiveTexture(tuenum);
+	//pglActiveTexture(tuenum);
+	glActiveTextureARB(tuenum);
 	#else
 	glActiveTextureARB(tuenum);
 	#endif
@@ -94,7 +96,8 @@ void UTILITY::TexCoord2d2f(int TU, float u, float v)
 		tuenum = GL_TEXTURE0_ARB;
 	
 	#ifdef _WIN32
-	pglMultiTexCoord2f(tuenum, u, v);
+	//pglMultiTexCoord2f(tuenum, u, v);
+	glMultiTexCoord2fARB(tuenum, u, v);
 	#else
 	glMultiTexCoord2fARB(tuenum, u, v);
 	#endif
@@ -267,7 +270,16 @@ void UTILITY::Init()
 	//cout << "utility init test" << endl;
 
 #ifdef _WIN32
-	pglMultiTexCoord4f = (PFNGLMULTITEXCOORD4FARBPROC) wglGetProcAddress("glMultiTexCoord4fARB");
+	GLenum glew_err = glewInit();
+	if ( glew_err != GLEW_OK )
+	{
+		cerr << "GLEW failed to initialize: " << glewGetErrorString ( glew_err ) << endl;
+	}
+	else
+	{
+		cout << "Using GLEW " << glewGetString ( GLEW_VERSION ) << endl;
+	}
+	/*pglMultiTexCoord4f = (PFNGLMULTITEXCOORD4FARBPROC) wglGetProcAddress("glMultiTexCoord4fARB");
 	pglMultiTexCoord2f = (PFNGLMULTITEXCOORD2FARBPROC) wglGetProcAddress("glMultiTexCoord2fARB");
 	pglActiveTexture = (PFNGLCLIENTACTIVETEXTUREARBPROC) wglGetProcAddress("glActiveTextureARB");
 	pglClientActiveTexture = (PFNGLACTIVETEXTUREARBPROC) wglGetProcAddress("glClientActiveTextureARB");
@@ -280,7 +292,7 @@ void UTILITY::Init()
 		error_log << "main, WIN32: wglGetProcAddress(\"glActiveTextureARB\") failed." << endl;
 	if (pglClientActiveTexture == NULL)
 		error_log << "main, WIN32: wglGetProcAddress(\"glClientActiveTextureARB\") failed." << endl;
-		
+		*/
 		//cout << "utility init test" << endl;
 #endif
 

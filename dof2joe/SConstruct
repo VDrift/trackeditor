@@ -1,10 +1,19 @@
+import os, sys
+
 opts = Options('vdrift-trackeditor.conf', ARGUMENTS)
 opts.Add('converter', 'Program used to convert graphics from TGA or BMP to PNG. Run \'scons converter=mogrify\' if you have ImageMagick instead of NConvert.', 'nconvert')
 env = Environment(CPPPATH='include', options = opts)
 opts.Update(env)
 opts.Save('vdrift.conf', env)
 
-env.Append(LIBS = ['GL', 'GLU', 'SDL_image'])
+if ( 'win32' == sys.platform or 'cygwin' == sys.platform ):
+    env.Append(LIBPATH = ['/usr/lib/mingw'])
+    env.Append(LIBS = ['opengl32', 'glu32', 'glew32', 'mingw32', 'SDLmain', 'SDL', 'SDL_image', 'SDL_net' ])
+else:
+    env.ParseConfig('sdl-config --cflags --libs')
+    env.Append(LIBPATH = ['/usr/X11R6/lib'])
+    env.Append(LIBS = ['GL', 'GLU', 'SDL_image'])
+
 if env['converter'] == 'mogrify':
     env.Append(CPPDEFINES = [('CONVERT', '\\"mogrify\\"')])
 else:

@@ -224,7 +224,7 @@ void ROADSTRIP::Visualize (bool wireframe, bool fill, VERTEX color)
 		//if (tot - count < 50)
 		bool drawme = true;
 		//VERTEX pos = curnode->patch.center+cam.position;
-		VERTEX & pos = curnode->patch.center;
+		/*VERTEX & pos = curnode->patch.center;
 		for (int i=0;i<6;i++) 
 		{
 			float rd=cam.frustum[i][0]*pos.x+
@@ -235,7 +235,7 @@ void ROADSTRIP::Visualize (bool wireframe, bool fill, VERTEX color)
 			{
 				drawme = false;
 			}
-		}
+		}*/
 		
 		if (drawme)
 		{

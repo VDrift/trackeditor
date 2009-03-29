@@ -1604,6 +1604,7 @@ int drawGLScene()
 	float w, h;
 	w = 0.02;
 	h = w*(4/3.0);
+	utility.Tex2D(0,true);
 	utility.Draw2D(0.5-w, 0.5-h, 0.5+w, 0.5+h, editordata.cursortex);
 	
 	if (fps > 0.0f)
