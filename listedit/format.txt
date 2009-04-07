@@ -22,3 +22,4 @@
 #13. rolling drag
 #14. whether or not the object is (literally) a shadow; these objects will not be drawn if dynamic shadows are turned on
 #15. whether or not the texture should be clamped to its borders instead of allowed to repeat.  set this true if you notice line artifacts at the edges of billboard type objects.  if 0, don't clamp (repeat), if 1 clamp in the U and V directions, if 2 clamp U only, if 3 clamp V only.
+#16. the road surface type: 1=asphalt, 2=grass
