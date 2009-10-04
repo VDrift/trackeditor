@@ -62,7 +62,7 @@ private:
 
 	void DrawObject(OBJECTNODE * object);
 
-	OBJECTMODEL * AddModel(string modelname, string texname, bool mip, bool fullbright, bool skybox);
+	OBJECTMODEL * AddModel(string modelname, string texname, bool mip, bool fullbright, bool skybox, bool highlight);
 
 	map <string, GLuint> texture_db;
 

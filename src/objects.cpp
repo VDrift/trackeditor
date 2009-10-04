@@ -255,7 +255,7 @@ void OBJECTS::Add(VERTEX pos, float rotation, string modelname, string texname, 
 	
 	if (!found)
 	{
-		object_list->model = AddModel(modelname, texname, mip, fullbright, skybox);
+		object_list->model = AddModel(modelname, texname, mip, fullbright, skybox, col);
 	}
 }
 
@@ -264,7 +264,7 @@ OBJECTNODE::OBJECTNODE()
 	dir.LoadMultIdent();
 }
 
-OBJECTMODEL * OBJECTS::AddModel(string modelname, string texname, bool mip, bool fullbright, bool skybox)
+OBJECTMODEL * OBJECTS::AddModel(string modelname, string texname, bool mip, bool fullbright, bool skybox, bool highlight)
 {
 	OBJECTMODEL * oldfirst = model_list;
 	model_list = new OBJECTMODEL;
@@ -286,6 +286,23 @@ OBJECTMODEL * OBJECTS::AddModel(string modelname, string texname, bool mip, bool
 	else
 	{
 		model_list->jmodel.TextureID(tslot->second, 0);
+	}
+	
+	if (highlight)
+	{
+		string highlight_texname = "gui/highlight.png";
+		tslot = texture_db.find(highlight_texname);
+		if (tslot == texture_db.end())
+		{
+			GLuint newtexid = utility.TexLoad(highlight_texname, false);
+			texture_db[highlight_texname] = newtexid;
+			//cout << texname << ": " << newtexid << endl;
+			model_list->jmodel.AdditiveTextureID(newtexid, 1);
+		}
+		else
+		{
+			model_list->jmodel.AdditiveTextureID(tslot->second, 1);
+		}
 	}
 	
 	//cout << "Addmodel: " << modelname << endl;
