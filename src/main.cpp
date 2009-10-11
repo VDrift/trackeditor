@@ -359,12 +359,17 @@ void Update()
 	
 	bool mainloop = false;
 	
+	//std::cout << "Mainloop" << std::endl;
+	
 	//if unpaused and getting a reasonable framerate
 	//if (fps > MIN_FPS && timefactor != 0.0f)
 	if (fps > 0.0f && timefactor != 0.0f)
 	{
-		execution_time += timefactor / fps;
-		int num_updates = (int) (execution_time / FRAME_TIME);
+		double time_increment = timefactor / fps;
+		//std::cout << "Time elapsed: " << execution_time << " + " << time_increment << std::endl;
+		
+		execution_time += time_increment;
+		//int num_updates = (int) (execution_time / FRAME_TIME);
 //		double this_frame = (double) num_updates * FRAME_TIME;
 		
 		mouse.Update(cam, SCREEN_WIDTH, SCREEN_HEIGHT, timefactor, fps);
@@ -373,6 +378,8 @@ void Update()
 		
 		while (execution_time > FRAME_TIME)
 		{
+			//std::cout << "Frame start: " << execution_time << std::endl;
+			
 			#ifdef PERFORMANCE_PROFILE
 			suseconds_t t1, t2;
 			t1 = GetMicroSeconds();
@@ -440,7 +447,7 @@ void Update()
 			//terrain.Update(cam, 1.0, 1.0/FRAME_TIME, day_time);
 			
 			execution_time -= FRAME_TIME;
-			num_updates++;
+			//num_updates++;
 			
 			//replay.IncrementFrame();
 		}
@@ -1641,7 +1648,7 @@ int drawGLScene()
 			tnum++;
 		}
 	}
-	fps = tfps / (float) tnum;
+	fps = std::min(1000.0f,tfps / (float) tnum);
 	
 	/*lfps += pfps;
     {
