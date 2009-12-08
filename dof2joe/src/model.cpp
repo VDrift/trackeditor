@@ -2,6 +2,8 @@
 
 #include "model.h"
 
+#include <cstring>
+
 JOEMODEL::JOEMODEL()
 {
 	// Set the pointers to null
