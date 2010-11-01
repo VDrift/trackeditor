@@ -402,6 +402,37 @@ void QUATERNION::SetEuler(float a, float b, float c)
 	*this = qout;
 }
 
+VERTEX QUATERNION::GetEulerZYX() const
+{
+	VERTEX vout;
+	QUATERNION q1 = *this;
+	
+	vout.x = atan2(2 * (q1.y * q1.z + q1.x * q1.w), -q1.x * q1.x - q1.y * q1.y + q1.z * q1.z + q1.w * q1.w);
+	vout.y = asin(-2 * (q1.x * q1.z - q1.y * q1.w));
+	vout.z = atan2(2 * (q1.x * q1.y + q1.z * q1.w),  q1.x * q1.x - q1.y * q1.y - q1.z * q1.z + q1.w * q1.w);
+	
+	return vout;
+}
+
+void QUATERNION::SetEulerZYX(const VERTEX & angle)
+{
+	cachematvalid = false;
+	
+	QUATERNION qout;
+	float cosx2 = cos(angle.x/2);
+	float cosy2 = cos(angle.y/2);
+	float cosz2 = cos(angle.z/2);
+	float sinx2 = sin(angle.x/2);
+	float siny2 = sin(angle.y/2);
+	float sinz2 = sin(angle.z/2);
+	qout.x = sinx2 * cosy2 * cosz2 - cosx2 * siny2 * sinz2;
+	qout.y = cosx2 * siny2 * cosz2 + sinx2 * cosy2 * sinz2;
+	qout.z = cosx2 * cosy2 * sinz2 - sinx2 * siny2 * cosz2;
+	qout.w = cosx2 * cosy2 * cosz2 + sinx2 * siny2 * sinz2;
+	
+	*this = qout;
+}
+
 QUATERNION QUATERNION::ReturnConjugate()
 {
 	QUATERNION qtemp;

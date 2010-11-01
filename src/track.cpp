@@ -428,15 +428,11 @@ void TRACK::Write(string trackname)
 	std::vector<QUATERNION>::iterator sov_it;
 	for (sov_it = startquat.begin(); sov_it != startquat.end(); sov_it++)
 	{
-		VERTEX sov;
-		sov.x = sov_it->x;
-		sov.y = sov_it->y;
-		sov.z = sov_it->z;
-		std::stringstream s1,s2;
-		s1<<"start orientation-xyz "<<index;
-		s2<<"start orientation-w "<<index;
+		VERTEX sov = sov_it->GetEulerZYX();
+		sov.Scale(180.0/3.14159265);
+		std::stringstream s1;
+		s1<<"start orientation "<<index;
 		trackconfig.SetParam(s1.str(), sov.v3());
-		trackconfig.SetParam(s2.str(), sov_it->w);
 		index++;
 	}
 	trackconfig.SetParam("cull faces", "yes");
@@ -527,38 +523,20 @@ void TRACK::Load(string trackname)
         trackconfig.SuppressError(true); //suppress error message
         while (!end_of_position)
         {
-                std::stringstream s1,s2;
-                s1<<"start orientation-xyz "<<index;
-                s2<<"start orientation-w "<<index;
-                if (trackconfig.GetParam(s1.str(), tvert) &&
-                    trackconfig.GetParam(s2.str(), w))
-                {
-                        sov.Set(tvert);
-                        QUATERNION so;
-                        so.x = sov.x;
-                        so.y = sov.y;
-                        so.z = sov.z;
-                        so.w = w;
-                        SetStartOrientation(so);
-                        index++;
-                }
-                else end_of_position = true;
+			std::stringstream s;
+			s<<"start orientation "<<index;
+			if (trackconfig.GetParam(s.str(), tvert))
+			{
+				sov.Set(tvert);
+				sov.Scale(3.14159265/180.0);
+				QUATERNION so;
+				so.SetEulerZYX(sov);
+				SetStartOrientation(so);
+				index++;
+			}
+			else end_of_position = true;
         }
         trackconfig.SuppressError(false); //turn error message back on
-
-        if (index == 0) //still using the old format
-        {
-		if (trackconfig.GetParam("start orientation-xyz", tvert) &&
-		    trackconfig.GetParam("start orientation-w", w))
-		{
-			sov.Set(tvert);
-			QUATERNION so;
-			so.x = sov.x;
-			so.y = sov.y;
-			so.z = sov.z;
-			so.w = w;
-			SetStartOrientation(so);
-		}
 	}
 	
 	int lapmarkers=0;

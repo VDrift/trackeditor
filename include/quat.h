@@ -70,6 +70,7 @@ public:
 	void SetAxisAngle(float a, float ax, float ay, float az);
 	void Rotate(float a, float ax, float ay, float az);
 	void SetEuler(float a, float b, float c);
+	void SetEulerZYX(const VERTEX & angle);
 	QUATERNION ReturnConjugate();
 	void LookAt(float eyeX, float eyeY, float eyeZ, float centerX, float centerY, 
 		   float centerZ, float upX, float upY, float upZ);
@@ -77,6 +78,7 @@ public:
 	VERTEX RotateVec(VERTEX vec);
 	float GetAngleBetween(QUATERNION quat2);
 	VERTEX GetEuler();
+	VERTEX GetEulerZYX() const;
 	//spherical linear interpolation between this quat and another quat
 	QUATERNION Slerp(QUATERNION quat2, float t);
 	QUATERNION QuatSlerp(QUATERNION quat2, float t);
