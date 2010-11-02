@@ -1,5 +1,5 @@
 /***************************************************************************
- *            track.cc
+ *			track.cc
  *
  *  Sat Nov 19 11:08:52 2005
  *  Copyright  2005  Joe Venzon
@@ -21,7 +21,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
- 
+
 #include "track.h"
 
 ROADSTRIP::ROADSTRIP()
@@ -55,7 +55,7 @@ BEZIER * ROADSTRIP::Add(BEZIER newpatch)
 	{
 		lastnode->next = new BEZIERNODE;
 		lastnode->next->patch.CopyFrom(newpatch);
-		
+	
 		//optional....
 		lastnode->patch.Attach(lastnode->next->patch);
 		return &(lastnode->next->patch);
@@ -111,7 +111,7 @@ bool ROADSTRIP::WriteTo(ofstream &openfile)
 	BEZIERNODE * curnode = patchnodes;
 	
 	openfile << NumPatches() << endl << endl;
-		
+	
 	while (curnode != NULL)
 	{
 		curnode->patch.WriteTo(openfile);
@@ -225,7 +225,7 @@ void ROADSTRIP::Visualize (bool wireframe, bool fill, VERTEX color)
 		bool drawme = true;
 		//VERTEX pos = curnode->patch.center+cam.position;
 		/*VERTEX & pos = curnode->patch.center;
-		for (int i=0;i<6;i++) 
+		for (int i=0;i<6;i++)
 		{
 			float rd=cam.frustum[i][0]*pos.x+
 			   cam.frustum[i][1]*pos.y+
@@ -488,62 +488,61 @@ void TRACK::Load(string trackname)
 	trackconfig.Load((settings.GetDataDir() + "/tracks/" + trackname + "/track.txt").c_str());
 	float tvert[3];
 	VERTEX sl;
-        int index = 0;
-        bool end_of_position = false;
-        startloc.clear();
-        trackconfig.SuppressError(true); //suppress error message
-        while (!end_of_position)
-        {
-                std::stringstream s;
-                s<<"start position "<<index;
-                if (trackconfig.GetParam(s.str(), tvert))
-                {
-                        sl.Set(tvert);
-                        SetStart(sl);
-                        index++;
-                }
-                else end_of_position = true;
-        }
-        trackconfig.SuppressError(false); //turn error message back on
-
-        if (index == 0) //still using the old format
-        {
+	int index = 0;
+	bool end_of_position = false;
+	startloc.clear();
+	trackconfig.SuppressError(true); //suppress error message
+	while (!end_of_position)
+	{
+		std::stringstream s;
+		s<<"start position "<<index;
+		if (trackconfig.GetParam(s.str(), tvert))
+		{
+			sl.Set(tvert);
+			SetStart(sl);
+			index++;
+		}
+		else end_of_position = true;
+	}
+	trackconfig.SuppressError(false); //turn error message back on
+	
+	if (index == 0) //still using the old format
+	{
 		if (trackconfig.GetParam("start position", tvert))
 		{
-                	sl.Set(tvert);
-                	SetStart(sl);
+			sl.Set(tvert);
+			SetStart(sl);
 		}
-        }
-
-        index = 0;
-        end_of_position = false;
-        startquat.clear();
-        VERTEX sov;
-        float w;
-        trackconfig.SuppressError(true); //suppress error message
-        while (!end_of_position)
-        {
-			std::stringstream s;
-			s<<"start orientation "<<index;
-			if (trackconfig.GetParam(s.str(), tvert))
-			{
-				sov.Set(tvert);
-				sov.Scale(3.14159265/180.0);
-				QUATERNION so;
-				so.SetEulerZYX(sov);
-				SetStartOrientation(so);
-				index++;
-			}
-			else end_of_position = true;
-        }
-        trackconfig.SuppressError(false); //turn error message back on
 	}
+	
+	index = 0;
+	end_of_position = false;
+	startquat.clear();
+	VERTEX sov;
+	float w;
+	trackconfig.SuppressError(true); //suppress error message
+	while (!end_of_position)
+	{
+		std::stringstream s;
+		s<<"start orientation "<<index;
+		if (trackconfig.GetParam(s.str(), tvert))
+		{
+			sov.Set(tvert);
+			sov.Scale(3.14159265/180.0);
+			QUATERNION so;
+			so.SetEulerZYX(sov);
+			SetStartOrientation(so);
+			index++;
+		}
+		else end_of_position = true;
+	}
+	trackconfig.SuppressError(false); //turn error message back on
 	
 	int lapmarkers=0;
 	trackconfig.GetParam("lap sequences", lapmarkers);
 	for (int l = 0; l < lapmarkers; l++)
 	{
-		float lapraw[3]={0.,0.,0.};
+		float lapraw[3]= {0.,0.,0.};
 		stringstream lapname;
 		lapname << "lap sequence " << l;
 		trackconfig.GetParam(lapname.str(), lapraw);
@@ -584,7 +583,7 @@ void TRACK::Delete(ROADSTRIP * striptodel)
 	while (curnode != NULL)
 	{
 		/*
-		NOTE THAT THE BACKSPACE BUTTON NEEDS TO CALL THIS (AND CLEAR 
+		NOTE THAT THE BACKSPACE BUTTON NEEDS TO CALL THIS (AND CLEAR
 		 ACTIVESTRIP TO NULL) TO ENSURE THERE ARE NO EMPTY ROADS!
 		*/
 		
