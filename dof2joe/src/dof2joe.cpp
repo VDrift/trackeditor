@@ -907,13 +907,13 @@ void WriteObject(string filename, JOEMODEL & obj)
 
 void ConvertTexture(string texture_filename, string outpath, string texname)
 {
-	char buffer[1024];
+	char buffer[1024];/*
 	if( strcmp(CONVERT,"mogrify") == 0 )
 	{
 		sprintf(buffer, "convert -format png %s %s/%s.png",
 			texture_filename.c_str(), outpath.c_str(), texname.c_str());
 	}
-	else
+	else*/
 	{
 		sprintf(buffer, "nconvert -out png -o %s/%s.png %s",
 			outpath.c_str(), texname.c_str(), texture_filename.c_str());
@@ -968,17 +968,40 @@ void WriteObjects(string filename, string outpath, string inpath)
 			//append to list.txt
 			string listfile = outpath + "/list.txt";
 			ofstream lf;
-			lf.open(listfile.c_str(), ofstream::out | ofstream::app);
+			lf.open(listfile.c_str(), ofstream::out);
 			if (lf)
 			{
+				streampos beg = lf.tellp();
+				lf.seekp(0, ios_base::end);
+				streampos cur = lf.tellp();
+				if (beg == cur)
+				{
+					// write parameter count
+					lf << "17" << endl;
+				}
 				lf << endl << "#added by dof2joe" << endl;
 				char buffer[1024];
 				sprintf(buffer, "%s-%02d.joe", filename.c_str(), o);
 				lf << buffer << endl;
 				sprintf(buffer, "%s.png", texname.c_str());
 				lf << buffer << endl;
-				lf << "1 0 0\n0 0 0\n0\n0" << endl;
-				
+				/* default parameter settings
+				mipmap = 1
+				nolighting = 0
+				skybox = 0
+				transparent_blend = 0
+				bump_wavelength = 1
+				bump_amplitude = 0
+				driveable = false
+				collideable = false
+				friction_notread = 0
+				friction_tread = 0
+				rolling_resistance = 0
+				rolling_drag = 0
+				isashadow = 0
+				clamptexture = 0
+				surface = 0*/
+				lf << "1\n0\n0\n0\n1\n0\n0\n0\n0\n0\n0\n0\n0\n0\n0" << endl;
 				lf.close();
 			}
 		}
