@@ -925,7 +925,7 @@ void ConvertTexture(string texture_filename, string outpath, string texname)
 	indent--;
 }
 
-void WriteObjects(string filename, string outpath, string inpath)
+void WriteObjects(ofstream & lf, string filename, string outpath, string inpath)
 {
 	bool lcaseinput = true;
 	
@@ -963,47 +963,31 @@ void WriteObjects(string filename, string outpath, string inpath)
 		indent++;
 		sprintf(buffer, "%s/%s-%02d.joe", outpath.c_str(), filename.c_str(), o);
 		
-		if (outpath != ".")
+		if (outpath != "." && lf.good())
 		{
-			//append to list.txt
-			string listfile = outpath + "/list.txt";
-			ofstream lf;
-			lf.open(listfile.c_str(), ofstream::out);
-			if (lf)
-			{
-				streampos beg = lf.tellp();
-				lf.seekp(0, ios_base::end);
-				streampos cur = lf.tellp();
-				if (beg == cur)
-				{
-					// write parameter count
-					lf << "17" << endl;
-				}
-				lf << endl << "#added by dof2joe" << endl;
-				char buffer[1024];
-				sprintf(buffer, "%s-%02d.joe", filename.c_str(), o);
-				lf << buffer << endl;
-				sprintf(buffer, "%s.png", texname.c_str());
-				lf << buffer << endl;
-				/* default parameter settings
-				mipmap = 1
-				nolighting = 0
-				skybox = 0
-				transparent_blend = 0
-				bump_wavelength = 1
-				bump_amplitude = 0
-				driveable = false
-				collideable = false
-				friction_notread = 0
-				friction_tread = 0
-				rolling_resistance = 0
-				rolling_drag = 0
-				isashadow = 0
-				clamptexture = 0
-				surface = 0*/
-				lf << "1\n0\n0\n0\n1\n0\n0\n0\n0\n0\n0\n0\n0\n0\n0" << endl;
-				lf.close();
-			}
+			lf << endl << "#added by dof2joe" << endl;
+			char buffer[1024];
+			sprintf(buffer, "%s-%02d.joe", filename.c_str(), o);
+			lf << buffer << endl;
+			sprintf(buffer, "%s.png", texname.c_str());
+			lf << buffer << endl;
+			/* default parameter settings
+			mipmap = 1
+			nolighting = 0
+			skybox = 0
+			transparent_blend = 0
+			bump_wavelength = 1
+			bump_amplitude = 0
+			driveable = false
+			collideable = false
+			friction_notread = 0
+			friction_tread = 0
+			rolling_resistance = 0
+			rolling_drag = 0
+			isashadow = 0
+			clamptexture = 0
+			surface = 0*/
+			lf << "1\n0\n0\n0\n1\n0\n0\n0\n0\n0\n0\n0\n0\n0\n0" << endl;
 		}
 		
 		WriteObject(buffer, models[o]);
@@ -1156,6 +1140,19 @@ void ConvertAllTextures(string inpath, string outpath)
 	}
 }
 
+std::streampos fileSize(const char* filePath )
+{
+	std::streampos fsize = 0;
+	std::ifstream file(filePath, ios::in | ios::binary);
+	if (file.good())
+	{
+		fsize = file.tellg();
+		file.seekg(0, std::ios::end);
+		fsize = file.tellg() - fsize;
+	}
+	return fsize;
+}
+
 int main(int argc, char * argv[])
 {
 	if (argc <= 1)
@@ -1166,12 +1163,12 @@ int main(int argc, char * argv[])
 	
 	vector <string> args;
 	args.resize(argc);
-	for (unsigned int i = 0; i < (unsigned int) argc; i++)
+	for (int i = 0; i < argc; i++)
 	{
 		args[i] = argv[i];
 	}
 	
-	unsigned int curarg = 1;
+	int curarg = 1;
 	
 	string outpath = ".";
 	
@@ -1183,14 +1180,30 @@ int main(int argc, char * argv[])
 		batch = true;
 	}
 	else
+	{
 		batch = false;
+	}
 	
 	alltextures.clear();
 	
 	bool haveshaders = false;
 	string batchpath;
 	
-	for (unsigned int i = curarg; i < (unsigned int) argc; i++)
+	ofstream lf;
+	string listfile = outpath + "/list.txt";
+	if (curarg < argc && fileSize(listfile.c_str()) == 0)
+	{
+		// write parameter count
+		lf.open(listfile.c_str());
+		lf << "17" << endl;
+		if (!lf.good())
+		{
+			cout << "Failed to open: " << listfile << std::endl;
+			return 0;
+		}
+	}
+	
+	for (int i = curarg; i < argc; i++)
 	{
 		indent = 0;
 		textures.clear();
@@ -1230,12 +1243,12 @@ int main(int argc, char * argv[])
 		
 		if (batch && batchpath.empty()) batchpath = inpath;
 		
-		WriteObjects(shortfn, outpath, inpath);
+		WriteObjects(lf, shortfn, outpath, inpath);
 	}
 	
 	if (batch)
 	{
-		ConvertAllTextures(batchpath, outpath);
+		//ConvertAllTextures(batchpath, outpath);
 	}
 	
 	return 0;
