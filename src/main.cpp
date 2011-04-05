@@ -877,6 +877,14 @@ bool LoadWorld()
 	
 	track.Load(editordata.activetrack);
 	
+	//float aangle[] = {0, 1, 0, 0};
+	//track.GetStartOrientation(0).GetAxisAngle(aangle);
+	//cam.Rotate(aangle[0], aangle[1], aangle[2], aangle[3]);
+	VERTEX start = track.GetStart(0);
+	cam.Move(-start.x, -start.y, -start.z);
+	cam.Update();
+	cam.LoadVelocityIdentity();
+	
 	//car_file = "s2000";
 	//ifstream csfile;
 	//car_file = "";
@@ -940,18 +948,6 @@ bool InitGameData()
 	//day_time = abs_time = 0.48;
 	//day_time = abs_time = 0.75;
 	
-
-	
-	LoadingScreen("Loading...\nSetting camera position");
-	
-	// Set the initial camera position
-	//cam.Move(-200,-200,-200);
-	//cam.Move(-596.513,-30.9295,-250.623);
-	
-	cam.Move(0,-5,0);
-	cam.Update();
-	cam.LoadVelocityIdentity();
-	//cam.Rotate(180.0,0,1,0);
 	/*
 	LoadingScreen("Loading...\nLoading Meshes");
 	//load scene objects
@@ -1176,6 +1172,8 @@ int drawGLScene()
 	t1 = GetMicroSeconds();
 	#endif
 	
+	// model the highlighted vertex belongs to
+	OBJECTMODEL * highlighted_model = NULL;
 	//if (state.GetGameState() != STATE_INITIALMENU)
 	{
 		
@@ -1370,7 +1368,7 @@ int drawGLScene()
 		camray = cam.dir.RotateVec(camray);*/
 		VERTEX selvert;
 		bool highlightedvert = false;
-		if (objects.FindClosestVert(cam.position.ScaleR(-1.0), camray, selvert))
+		if (objects.FindClosestVert(cam.position.ScaleR(-1.0), camray, selvert, highlighted_model))
 		{
 			/*cam.position.ScaleR(-1.0).DebugPrint();
 			selvert.DebugPrint();
@@ -1663,14 +1661,29 @@ int drawGLScene()
 	}*/
 	
 	char tempchar[1024];
-	sprintf(tempchar, "Frames per second:  %f\n", 
-		fps);
+	sprintf(tempchar, "Frames per second: %f\n", fps);
 	
 	//font.Print(0.5,0,tempchar,0,0,1,1,0);
 	if (showfps)
 		font.Print( 0.75, 0.0, tempchar, 1, 5, 1.0 );
 	
-
+	// print camera position
+	VERTEX pos = cam.GetPosition();
+	sprintf(tempchar, "Position: %0.2f, %0.2f, %0.2f\n", -pos.x, -pos.y, -pos.z);
+	font.Print( 0.75, 0.025, tempchar, 1, 5, 1.0 );
+	
+	//VERTEX ang = cam.dir.GetEulerZYX();
+	//sprintf(tempchar, "Angle: %0.2f, %0.2f, %0.2f\n", 180/M_PI*ang.x, -180/M_PI*ang.y, 180/M_PI*ang.z);
+	//font.Print( 0.75, 0.05, tempchar, 1, 5, 1.0 );
+	
+	// print object name the highlighted vertex belongs to
+	if (highlighted_model)
+	{
+		string modelname = highlighted_model->name;
+		sprintf(tempchar, "Model: %s\n", modelname.c_str());
+		font.Print( 0.75, 0.05, tempchar, 1, 5, 1.0 );
+	}
+	
 	#ifdef PERFORMANCE_PROFILE
 	t2 = GetMicroSeconds();
 	cout << "font.Print() ticks: " << t2-t1 << endl;

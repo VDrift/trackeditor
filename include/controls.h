@@ -110,8 +110,8 @@ private:
 	SDL_Joystick * js[MAX_JOYSTICKS];
 
 public:
-	GAMECONTROLS::GAMECONTROLS();
-	GAMECONTROLS::~GAMECONTROLS();
+	GAMECONTROLS();
+	~GAMECONTROLS();
 	void LoadControls();
 	CONTROL * GetControls();
 	int GetNumControls();

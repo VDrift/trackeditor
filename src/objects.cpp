@@ -381,6 +381,17 @@ bool OBJECTS::FindClosestVert(VERTEX orig, VERTEX dir, VERTEX &out)
 
 bool OBJECTS::FindClosestVert(VERTEX orig, VERTEX dir, VERTEX &out, string & obj)
 {
+	OBJECTMODEL * model = NULL;
+	if (FindClosestVert(orig, dir, out, obj))
+	{
+		obj = model->name;
+		return true;
+	}
+	return false;
+}
+
+bool OBJECTS::FindClosestVert(VERTEX orig, VERTEX dir, VERTEX &out, OBJECTMODEL * & obj)
+{
 	float mindist = SELECT_DISTANCE * 2.0;
 	VERTEX relobjpos, tvert, rayproj, selvert;
 	int i;
@@ -410,7 +421,7 @@ bool OBJECTS::FindClosestVert(VERTEX orig, VERTEX dir, VERTEX &out, string & obj
 				{
 					mindist = (tvert - rayproj).len();
 					selvert = tvert + orig;
-					obj = curpos->model->name;
+					obj = curpos->model;
 				}
 			}
 		}
@@ -427,15 +438,15 @@ bool OBJECTS::FindClosestVert(VERTEX orig, VERTEX dir, VERTEX &out, string & obj
 	if (mindist < SELECT_DISTANCE)
 	{
 		out = selvert;
-		
 		return true;
 	}
 	else
 	{
-		obj = "";
 		return false;
 	}
 }
+
+
 
 class OUTPUTRECORD
 {
