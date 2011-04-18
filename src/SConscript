@@ -15,6 +15,7 @@ Import('*')
 src = Split("""main.cpp
                camera.cpp
                font.cpp
+               joepack.cpp
                keyman.cpp
                messageq.cpp
                model.cpp

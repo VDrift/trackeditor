@@ -146,10 +146,10 @@ bool JOEMODEL::Load(string strFileName)
 	//texid[1] = utility.TexLoad(strFileName + "-brake.png", true);
 	
     // Open the MD2 file in binary
-    m_FilePointer = fopen(filename.c_str(), "rb");
+    std::ifstream file(filename.c_str(), ios_base::in|ios_base::binary);
 
     // Make sure we have a valid file pointer (we found the file)
-    if(!m_FilePointer) 
+    if(!file.good()) 
     {
         // Display an error message and don't load anything if no file was found
         sprintf(strMessage, "Unable to find the file: %s!", strFileName.c_str());
@@ -158,29 +158,36 @@ bool JOEMODEL::Load(string strFileName)
 		return false;
     }
 	
+    // Load from file
+    return Load(filename, file);
+}
+
+
+bool JOEMODEL::Load(string fileName, istream & file)
+{
+	if (!file.good()) return false;
+	
+	//texid = utility.TexLoad(strFileName + ".png", GL_RGBA, true);
+	//texid = utility.TexLoad(newfn, true);
+	if (utility.FileExists(FileToPNG(fileName)))
 	{
-		//texid = utility.TexLoad(strFileName + ".png", GL_RGBA, true);
-		//texid = utility.TexLoad(newfn, true);
-		if (utility.FileExists(FileToPNG(filename)))
+		textureid[0] = utility.TexLoad(FileToPNG(fileName), true);
+		texturemode[0] = TEXTUREMODE_TEX;
+	}
+	else
+	{
+		if (utility.FileExists(FileToTexturesizePNG(fileName)))
 		{
-			textureid[0] = utility.TexLoad(FileToPNG(filename), true);
+			textureid[0] = utility.TexLoad(FileToTexturesizePNG(fileName), true);
 			texturemode[0] = TEXTUREMODE_TEX;
-		}
-		else
-		{
-			if (utility.FileExists(FileToTexturesizePNG(filename)))
-			{
-				textureid[0] = utility.TexLoad(FileToTexturesizePNG(filename), true);
-				texturemode[0] = TEXTUREMODE_TEX;
-			}
 		}
 	}
 	
 	//create a new object
 	pObject = new JOEObject;
-
-    // Read the header data and store it in our variable
-    fread(&pObject->info, sizeof(JOEHeader), 1, m_FilePointer);
+	
+	// Read the header data and store it in our variable
+    file.read((char*)&pObject->info, sizeof(JOEHeader));
 	
 	pObject->info.magic = ENDIAN_SWAP_32(pObject->info.magic);
 	pObject->info.version = ENDIAN_SWAP_32(pObject->info.version);
@@ -191,7 +198,8 @@ bool JOEMODEL::Load(string strFileName)
     if(pObject->info.version != JOE_VERSION)
     {
         // Display an error message for bad file format, then stop loading
-        sprintf(strMessage, "Invalid file format (Version is %d not %d): %s!", pObject->info.version, JOE_VERSION, strFileName.c_str());
+        char strMessage[255] = {0};
+        sprintf(strMessage, "Invalid file format (Version is %d not %d): %s!", pObject->info.version, JOE_VERSION, fileName.c_str());
 		loadedfile = false;
         cerr << strMessage << endl;
 		delete [] pObject;
@@ -200,14 +208,9 @@ bool JOEMODEL::Load(string strFileName)
     }
 	
 	loadedfile = true;
-
-	//cout << pObject->info.version << "," << pObject->info.num_faces << endl;
 	
     // Read in the model and animation data
-	ReadData();
-
-    // Clean up after everything
-    CleanUp();
+	ReadData(file);
 
 	//optimize frame zero into a static display list
 	static_list = glGenLists(1);
@@ -215,11 +218,10 @@ bool JOEMODEL::Load(string strFileName)
 	Draw(0,0,0);
 	glEndList ();
 	
-    // Return a success
-    return true;
+	return true;
 }
 
-void JOEMODEL::ReadData()
+void JOEMODEL::ReadData(istream & file)
 {
 	int num_frames = pObject->info.num_frames;
 	int num_faces = pObject->info.num_faces;
@@ -228,18 +230,17 @@ void JOEMODEL::ReadData()
 	
 	int i;
 	for (i = 0; i < num_frames; i++)
-	//for (i = 0; i < 1; i++)
 	{
 		pObject->frames[i].faces = new JOEFace [num_faces];
 		
-		fread(pObject->frames[i].faces, sizeof(JOEFace), num_faces, m_FilePointer);
+		file.read((char*)pObject->frames[i].faces, sizeof(JOEFace) * num_faces);
 		CorrectEndian(pObject->frames[i].faces, num_faces);
 		
-		fread(&pObject->frames[i].num_verts, sizeof(int), 1, m_FilePointer);
+		file.read((char*)&pObject->frames[i].num_verts, sizeof(int));
 		pObject->frames[i].num_verts = ENDIAN_SWAP_32(pObject->frames[i].num_verts);
-		fread(&pObject->frames[i].num_texcoords, sizeof(int), 1, m_FilePointer);
+		file.read((char*)&pObject->frames[i].num_texcoords, sizeof(int));
 		pObject->frames[i].num_texcoords = ENDIAN_SWAP_32(pObject->frames[i].num_texcoords);
-		fread(&pObject->frames[i].num_normals, sizeof(int), 1, m_FilePointer);
+		file.read((char*)&pObject->frames[i].num_normals, sizeof(int));
 		pObject->frames[i].num_normals = ENDIAN_SWAP_32(pObject->frames[i].num_normals);
 		//cout << pObject->frames[i].num_verts << "," << pObject->frames[i].num_texcoords << "," << pObject->frames[i].num_normals << endl;
 		
@@ -247,13 +248,12 @@ void JOEMODEL::ReadData()
 		pObject->frames[i].normals = new JOEVertex [pObject->frames[i].num_normals];
 		pObject->frames[i].texcoords = new JOETexCoord [pObject->frames[i].num_texcoords];
 		
-		fread(pObject->frames[i].verts, sizeof(JOEVertex), pObject->frames[i].num_verts, m_FilePointer);
+		file.read((char*)pObject->frames[i].verts, sizeof(JOEVertex) * pObject->frames[i].num_verts);
 		CorrectEndian(pObject->frames[i].verts, pObject->frames[i].num_verts);
-		fread(pObject->frames[i].normals, sizeof(JOEVertex), pObject->frames[i].num_normals, m_FilePointer);
+		file.read((char*)pObject->frames[i].normals, sizeof(JOEVertex) * pObject->frames[i].num_normals);
 		CorrectEndian(pObject->frames[i].normals, pObject->frames[i].num_normals);
-		fread(pObject->frames[i].texcoords, sizeof(JOETexCoord), pObject->frames[i].num_texcoords, m_FilePointer);
-		CorrectEndian(pObject->frames[i].texcoords, pObject->frames[i].num_texcoords);
-		
+		file.read((char*)pObject->frames[i].texcoords, sizeof(JOETexCoord) * pObject->frames[i].num_texcoords);
+		CorrectEndian(pObject->frames[i].texcoords, pObject->frames[i].num_texcoords);		
 		//cout << pObject->frames[i].texcoords[0].u << "," << pObject->frames[i].texcoords[0].v << endl;
 	}
 	
@@ -368,14 +368,6 @@ void JOEMODEL::ReadData()
     }
 	*/
 	//cout << "done" << endl;
-}
-
-void JOEMODEL::CleanUp()
-{
-    // This just just the regular cleanup or our md2 model class.  We can free
-    // all of this data because we already have it stored in our own structures.
-
-    fclose(m_FilePointer);                      // Close the current file pointer
 }
 
 extern bool verbose_output;

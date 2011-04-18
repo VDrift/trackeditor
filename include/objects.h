@@ -19,6 +19,7 @@
 #include "camera.h"
 #include "model.h"
 #include "globals.h"
+#include "joepack.h"
 
 #include <map>
 
@@ -54,6 +55,8 @@ class OBJECTS
 {
 private:
 	ofstream error_log;
+	JOEPACK jpk;
+	bool loadjpk;
 	OBJECTMODEL * model_list;
 	void delmodel();
 

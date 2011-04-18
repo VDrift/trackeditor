@@ -8,6 +8,7 @@ OBJECTS::OBJECTS()
 	
 	object_list = NULL;
 	model_list = NULL;
+	loadjpk = false;
 }
 
 OBJECTS::~OBJECTS()
@@ -32,6 +33,9 @@ void OBJECTS::DeleteAll()
 	
 	while (model_list != NULL)
 		delmodel();
+		
+	if (loadjpk)
+		jpk.ClosePack();
 }
 
 void OBJECTS::delobject()
@@ -269,11 +273,20 @@ OBJECTMODEL * OBJECTS::AddModel(string modelname, string texname, bool mip, bool
 	OBJECTMODEL * oldfirst = model_list;
 	model_list = new OBJECTMODEL;
 	model_list->next = oldfirst;
-	
 	model_list->name = modelname;
 	model_list->fullbright = fullbright;
 	model_list->skybox = skybox;
-	model_list->jmodel.Load(path + "/" + modelname);
+	
+	// prefer jpk over single obj files
+	if (loadjpk)
+	{
+		istream & file = jpk.Pack_fopen(modelname);
+		model_list->jmodel.Load(modelname, file);
+	}
+	else
+	{
+		model_list->jmodel.Load(path + "/" + modelname);
+	}
 	
 	map <string, GLuint>::iterator tslot = texture_db.find(texname);
 	if (tslot == texture_db.end())
@@ -321,6 +334,9 @@ void OBJECTS::LoadObjectsFromFolder(string objectpath)
 	
 	if (o)
 	{
+		// try to load objects.jpk
+		loadjpk = jpk.LoadPack(objectpath+"/objects.jpk");
+		
 		string m;
 		string t;
 		string extra;

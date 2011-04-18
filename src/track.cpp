@@ -514,12 +514,12 @@ void TRACK::Load(string trackname)
 			SetStart(sl);
 		}
 	}
+	if (startloc.size() == 0) SetStart(VERTEX());
 	
 	index = 0;
 	end_of_position = false;
 	startquat.clear();
 	VERTEX sov;
-	float w;
 	trackconfig.SuppressError(true); //suppress error message
 	while (!end_of_position)
 	{

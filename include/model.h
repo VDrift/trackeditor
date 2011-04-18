@@ -163,6 +163,7 @@ public:
 
     // This is the function that you call to load the MD2
     bool Load(string strFileName);
+    bool Load(string strFileName, istream & file);
 	void Draw(int frame, float t);
 	void Draw(int frame, int nextframe, float t);
 	void DrawStatic(bool textures); //draw frame 0, optimized for speed
@@ -213,13 +214,7 @@ private:
 	void CorrectEndian(struct JOETexCoord *p, int num);
 
 	// This reads in the data from the MD2 file and stores it in the member variables
-	void ReadData();
-
-	// This frees memory and closes the file
-	void CleanUp();
-	
-	// The file pointer
-	FILE *m_FilePointer;
+	void ReadData(istream & file);
 
 	//GLuint texid[NUM_TEXTURES];
 	GLuint textureid[MAX_TEXTURE_UNITS];
